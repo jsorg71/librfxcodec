@@ -73,4 +73,25 @@ rfxcodec_encode_ex(void *handle, char *cdata, int *cdata_bytes,
                    const struct rfx_tile *tiles, int num_tiles,
                    const char *quants, int num_quants, int flags);
 
+/* access to low level functions, use load library since some function might
+   not get compiled in */
+/* use simple types here, no sint16_t, uint8_t... */
+
+typedef int (*rfx_rlgr1_encode_proc)(const short *data, unsigned char *buffer, int buffer_size);
+typedef int (*rfx_rlgr3_encode_proc)(const short *data, unsigned char *buffer, int buffer_size);
+typedef int (*rfx_differential_encode_proc)(short *buffer, int buffer_size);
+typedef int (*rfx_quantization_encode_proc)(short *buffer, const char *quantization_values);
+typedef int (*rfx_dwt_2d_encode_proc)(const unsigned char *in_buffer, short *buffer, short *dwt_buffer);
+
+typedef int (*rfx_encode_diff_rlgr1_proc)(short *coef, unsigned char *cdata, int cdata_size);
+typedef int (*rfx_encode_diff_rlgr3_proc)(short *coef, unsigned char *cdata, int cdata_size);
+
+typedef int (*cpuid_x86_proc)(int eax_in, int ecx_in, int *eax, int *ebx, int *ecx, int *edx);
+typedef int (*rfxcodec_encode_dwt_shift_x86_sse2_proc)(const char *qtable, const unsigned char *data, short *dwt_buffer1, short *dwt_buffer);
+typedef int (*rfxcodec_encode_dwt_shift_x86_sse41_proc)(const char *qtable, const unsigned char *data, short *dwt_buffer1, short *dwt_buffer);
+
+typedef int (*cpuid_amd64_proc)(int eax_in, int ecx_in, int *eax, int *ebx, int *ecx, int *edx);
+typedef int (*rfxcodec_encode_dwt_shift_amd64_sse2_proc)(const char *qtable, const unsigned char *data, short *dwt_buffer1, short *dwt_buffer);
+typedef int (*rfxcodec_encode_dwt_shift_amd64_sse41_proc)(const char *qtable, const unsigned char *data, short *dwt_buffer1, short *dwt_buffer);
+
 #endif
