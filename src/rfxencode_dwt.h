@@ -16,10 +16,10 @@
  * limitations under the License.
  */
 
-#ifndef __RFXENCODE_RFX_H
-#define __RFXENCODE_RFX_H
+#ifndef __RFXENCODE_DWT_2D_H
+#define __RFXENCODE_DWT_2D_H
 
 int
-rfx_dwt_2d_encode(const uint8 *in_buffer, sint16 *buffer, sint16 *dwt_buffer);
+rfxencode_dwt_2d(const uint8 *in_buffer, sint16 *buffer, sint16 *dwt_buffer);
 
 #endif

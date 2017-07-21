@@ -213,7 +213,7 @@ rfx_dwt_2d_encode_block8(const uint8 *in_buffer,
 
 /******************************************************************************/
 int
-rfx_dwt_2d_encode(const uint8 *in_buffer, sint16 *buffer, sint16 *dwt_buffer)
+rfxencode_dwt_2d(const uint8 *in_buffer, sint16 *buffer, sint16 *dwt_buffer)
 {
     rfx_dwt_2d_encode_block8(in_buffer, buffer, dwt_buffer, 32);
     rfx_dwt_2d_encode_block(buffer + 3072, dwt_buffer, 16);

@@ -17,13 +17,13 @@
  * limitations under the License.
  */
 
-#ifndef __RFX_DIFF_RLGR3_H
-#define __RFX_DIFF_RLGR3_H
+#ifndef __RFXENCODE_DIFF_RLGR3_H
+#define __RFXENCODE_DIFF_RLGR3_H
 
 #include "rfxcommon.h"
 
 int
-rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size);
+rfxencode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size);
 
-#endif /* __RFX_DIFF_RLGR3_H */
+#endif /* __RFXENCODE_DIFF_RLGR3_H */
 

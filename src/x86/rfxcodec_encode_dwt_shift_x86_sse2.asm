@@ -1358,9 +1358,9 @@ set_quants_lo:
 
 ;******************************************************************************
 %ifidn __OUTPUT_FORMAT__,elf
-PROC rfxcodec_encode_dwt_shift_x86_sse2
+PROC rfxencode_dwt_shift_x86_sse2
 %else
-PROC _rfxcodec_encode_dwt_shift_x86_sse2
+PROC _rfxencode_dwt_shift_x86_sse2
 %endif
     ; align stack
     mov eax, esp

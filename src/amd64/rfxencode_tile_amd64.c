@@ -48,12 +48,12 @@ rfx_encode_component_rlgr1_amd64_sse2(struct rfxencode *enc, const char *qtable,
                                       uint8 *buffer, int buffer_size, int *size)
 {
     LLOGLN(10, ("rfx_encode_component_rlgr1_amd64_sse2:"));
-    if (rfxcodec_encode_dwt_shift_amd64_sse2(qtable, data, enc->dwt_buffer1,
-                                             enc->dwt_buffer) != 0)
+    if (rfxencode_dwt_shift_amd64_sse2(qtable, data, enc->dwt_buffer1,
+                                       enc->dwt_buffer) != 0)
     {
         return 1;
     }
-    *size = rfx_encode_diff_rlgr1(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfxencode_diff_rlgr1(enc->dwt_buffer1, buffer, buffer_size);
     return 0;
 }
 
@@ -64,12 +64,12 @@ rfx_encode_component_rlgr3_amd64_sse2(struct rfxencode *enc, const char *qtable,
                                       uint8 *buffer, int buffer_size, int *size)
 {
     LLOGLN(10, ("rfx_encode_component_rlgr3_amd64_sse2:"));
-    if (rfxcodec_encode_dwt_shift_amd64_sse2(qtable, data, enc->dwt_buffer1,
-                                             enc->dwt_buffer) != 0)
+    if (rfxencode_dwt_shift_amd64_sse2(qtable, data, enc->dwt_buffer1,
+                                       enc->dwt_buffer) != 0)
     {
         return 1;
     }
-    *size = rfx_encode_diff_rlgr3(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfxencode_diff_rlgr3(enc->dwt_buffer1, buffer, buffer_size);
     return 0;
 }
 
@@ -80,12 +80,12 @@ rfx_encode_component_rlgr1_amd64_sse41(struct rfxencode *enc, const char *qtable
                                        uint8 *buffer, int buffer_size, int *size)
 {
     LLOGLN(10, ("rfx_encode_component_rlgr1_amd64_sse41:"));
-    if (rfxcodec_encode_dwt_shift_amd64_sse41(qtable, data, enc->dwt_buffer1,
-                                              enc->dwt_buffer) != 0)
+    if (rfxencode_dwt_shift_amd64_sse41(qtable, data, enc->dwt_buffer1,
+                                        enc->dwt_buffer) != 0)
     {
         return 1;
     }
-    *size = rfx_encode_diff_rlgr1(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfxencode_diff_rlgr1(enc->dwt_buffer1, buffer, buffer_size);
     return 0;
 }
 
@@ -96,11 +96,11 @@ rfx_encode_component_rlgr3_amd64_sse41(struct rfxencode *enc, const char *qtable
                                        uint8 *buffer, int buffer_size, int *size)
 {
     LLOGLN(10, ("rfx_encode_component_rlgr3_amd64_sse41:"));
-    if (rfxcodec_encode_dwt_shift_amd64_sse41(qtable, data, enc->dwt_buffer1,
-                                              enc->dwt_buffer) != 0)
+    if (rfxencode_dwt_shift_amd64_sse41(qtable, data, enc->dwt_buffer1,
+                                        enc->dwt_buffer) != 0)
     {
         return 1;
     }
-    *size = rfx_encode_diff_rlgr3(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfxencode_diff_rlgr3(enc->dwt_buffer1, buffer, buffer_size);
     return 0;
 }

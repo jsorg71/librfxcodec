@@ -97,7 +97,7 @@
 } while (0)
 
 int
-rfx_encode_diff_rlgr1(sint16 *coef, uint8 *cdata, int cdata_size)
+rfxencode_diff_rlgr1(sint16 *coef, uint8 *cdata, int cdata_size)
 {
     int k;
     int kp;

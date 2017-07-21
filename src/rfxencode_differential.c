@@ -33,7 +33,7 @@
 
 /******************************************************************************/
 int
-rfx_differential_encode(sint16 *buffer, int buffer_size)
+rfxencode_differential(sint16 *buffer, int buffer_size)
 {
     sint16 n1, n2;
     sint16 *dst;

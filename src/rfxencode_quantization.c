@@ -138,7 +138,7 @@ rfx_quantization_encode_block(sint16 *buffer, int buffer_size, uint32 factor)
 
 /******************************************************************************/
 int
-rfx_quantization_encode(sint16 *buffer, const char *qtable)
+rfxencode_quantization(sint16 *buffer, const char *qtable)
 {
     uint32 factor;
 

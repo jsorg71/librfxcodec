@@ -1215,9 +1215,9 @@ set_quants_lo:
 
 ;******************************************************************************
 %ifidn __OUTPUT_FORMAT__,elf64
-PROC rfxcodec_encode_dwt_shift_amd64_sse41
+PROC rfxencode_dwt_shift_amd64_sse41
 %else
-PROC _rfxcodec_encode_dwt_shift_amd64_sse41
+PROC _rfxencode_dwt_shift_amd64_sse41
 %endif
     ; save registers
     push rbx

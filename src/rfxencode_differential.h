@@ -23,6 +23,6 @@
 #include "rfxcommon.h"
 
 int
-rfx_differential_encode(sint16 *buffer, int buffer_size);
+rfxencode_differential(sint16 *buffer, int buffer_size);
 
 #endif /* __RFXENCODE_DIFFERENTIAL_H */

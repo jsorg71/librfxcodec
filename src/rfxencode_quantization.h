@@ -17,12 +17,12 @@
  * limitations under the License.
  */
 
-#ifndef __RFX_QUANTIZATION_H
-#define __RFX_QUANTIZATION_H
+#ifndef __RFXENCODE_QUANTIZATION_H
+#define __RFXENCODE_QUANTIZATION_H
 
 #include "rfxcommon.h"
 
 int
-rfx_quantization_encode(sint16 *buffer, const char *quantization_values);
+rfxencode_quantization(sint16 *buffer, const char *quantization_values);
 
-#endif /* __RFX_QUANTIZATION_H */
+#endif /* __RFXENCODE_QUANTIZATION_H */

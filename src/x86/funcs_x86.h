@@ -32,15 +32,15 @@ int
 cpuid_x86(int eax_in, int ecx_in, int *eax, int *ebx, int *ecx, int *edx);
 
 int
-rfxcodec_encode_dwt_shift_x86_sse2(const char *qtable,
-                                   const unsigned char *data,
-                                   short *dwt_buffer1,
-                                   short *dwt_buffer);
+rfxencode_dwt_shift_x86_sse2(const char *qtable,
+                             const unsigned char *data,
+                             short *dwt_buffer1,
+                             short *dwt_buffer);
 int
-rfxcodec_encode_dwt_shift_x86_sse41(const char *qtable,
-                                    const unsigned char *data,
-                                    short *dwt_buffer1,
-                                    short *dwt_buffer);
+rfxencode_dwt_shift_x86_sse41(const char *qtable,
+                              const unsigned char *data,
+                              short *dwt_buffer1,
+                              short *dwt_buffer);
 
 #ifdef __cplusplus
 }
