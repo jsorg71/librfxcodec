@@ -461,6 +461,29 @@ rfx_encode_component_rlgr1(struct rfxencode *enc, const char *qtable,
 
 /******************************************************************************/
 int
+rfx_rem_encode_component_rlgr1(struct rfxencode *enc, const char *qtable,
+                               const uint8 *data,
+                               uint8 *buffer, int buffer_size, int *size)
+{
+    LLOGLN(10, ("rfx_rem_encode_component_rlgr1:"));
+    if (rfx_rem_dwt_2d_encode(data, enc->dwt_buffer1, enc->dwt_buffer) != 0)
+    {
+        return 1;
+    }
+    if (rfx_rem_quantization_encode(enc->dwt_buffer1, qtable) != 0)
+    {
+        return 1;
+    }
+    if (rfx_differential_encode(enc->dwt_buffer1 + 4015, 81) != 0)
+    {
+        return 1;
+    }
+    *size = rfx_rlgr1_encode(enc->dwt_buffer1, buffer, buffer_size);
+    return 0;
+}
+
+/******************************************************************************/
+int
 rfx_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
                            const uint8 *data,
                            uint8 *buffer, int buffer_size, int *size)
@@ -475,6 +498,29 @@ rfx_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
         return 1;
     }
     if (rfx_differential_encode(enc->dwt_buffer1 + 4032, 64) != 0)
+    {
+        return 1;
+    }
+    *size = rfx_rlgr3_encode(enc->dwt_buffer1, buffer, buffer_size);
+    return 0;
+}
+
+/******************************************************************************/
+int
+rfx_rem_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
+                              const uint8 *data,
+                              uint8 *buffer, int buffer_size, int *size)
+{
+    LLOGLN(10, ("rfx_rem_encode_component_rlgr3:"));
+    if (rfx_rem_dwt_2d_encode(data, enc->dwt_buffer1, enc->dwt_buffer) != 0)
+    {
+        return 1;
+    }
+    if (rfx_rem_quantization_encode(enc->dwt_buffer1, qtable) != 0)
+    {
+        return 1;
+    }
+    if (rfx_differential_encode(enc->dwt_buffer1 + 4015, 81) != 0)
     {
         return 1;
     }

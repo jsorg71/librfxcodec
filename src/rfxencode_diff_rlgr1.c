@@ -97,7 +97,8 @@
 } while (0)
 
 int
-rfx_encode_diff_rlgr1(sint16 *coef, uint8 *cdata, int cdata_size)
+rfx_encode_diff_rlgr1(sint16 *coef, uint8 *cdata, int cdata_size,
+                      int diff_bytes)
 {
     int k;
     int kp;
@@ -120,7 +121,7 @@ rfx_encode_diff_rlgr1(sint16 *coef, uint8 *cdata, int cdata_size)
     uint32 twoMs;
 
     /* the last 64 bytes are diff */
-    for (k = PIXELS_IN_TILE - 1; k > PIXELS_IN_TILE - 64; k--)
+    for (k = PIXELS_IN_TILE - 1; k > PIXELS_IN_TILE - diff_bytes; k--)
     {
         coef[k] -= coef[k - 1];
     }

@@ -152,12 +152,14 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
         if (enc->mode == RLGR3)
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr3\n");
-            enc->rfx_encode = rfx_encode_component_rlgr3; /* rfxencode_tile.c */
+            enc->rfx_rem_encode = rfx_encode_component_rlgr3; /* rfxencode_tile.c */
+            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr3; /* rfxencode_tile.c */
         }
         else
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr1\n");
             enc->rfx_encode = rfx_encode_component_rlgr1; /* rfxencode_tile.c */
+            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr1; /* rfxencode_tile.c */
         }
     }
     else
@@ -247,11 +249,13 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr3\n");
             enc->rfx_encode = rfx_encode_component_rlgr3; /* rfxencode_tile.c */
+            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr3; /* rfxencode_tile.c */
         }
         else
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr1\n");
             enc->rfx_encode = rfx_encode_component_rlgr1; /* rfxencode_tile.c */
+            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr1; /* rfxencode_tile.c */
         }
 #endif
     }

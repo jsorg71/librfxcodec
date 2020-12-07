@@ -31,9 +31,17 @@ rfx_encode_component_rlgr1(struct rfxencode *enc, const char *qtable,
                            const uint8 *data,
                            uint8 *buffer, int buffer_size, int *size);
 int
+rfx_rem_encode_component_rlgr1(struct rfxencode *enc, const char *qtable,
+                               const uint8 *data,
+                               uint8 *buffer, int buffer_size, int *size);
+int
 rfx_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
                            const uint8 *data,
                            uint8 *buffer, int buffer_size, int *size);
+int
+rfx_rem_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
+                               const uint8 *data,
+                               uint8 *buffer, int buffer_size, int *size);
 int
 rfx_encode_rgb(struct rfxencode *enc, const char *rgb_data,
                int width, int height, int stride_bytes,

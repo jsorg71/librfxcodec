@@ -51,6 +51,7 @@ struct rfxencode
     sint16 *dwt_buffer1;
     sint16 *dwt_buffer2;
     rfx_encode_proc rfx_encode;
+    rfx_encode_proc rfx_rem_encode;
 
     int got_sse2;
     int got_sse3;
