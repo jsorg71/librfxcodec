@@ -36,7 +36,8 @@ struct rfxencode
     int flags;
     int bits_per_pixel;
     int format;
-    int pad0[7];
+    int pro_ver;
+    int pad0[6];
 
     uint8 a_buffer[4096];
     uint8 y_r_buffer[4096];
@@ -51,7 +52,6 @@ struct rfxencode
     sint16 *dwt_buffer1;
     sint16 *dwt_buffer2;
     rfx_encode_proc rfx_encode;
-    rfx_encode_proc rfx_rem_encode;
 
     int got_sse2;
     int got_sse3;
@@ -62,5 +62,8 @@ struct rfxencode
     int got_lzcnt;
     int got_neon;
 };
+
+void
+rfxcodec_hexdump(const void *p, int len);
 
 #endif

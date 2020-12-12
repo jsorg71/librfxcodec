@@ -61,10 +61,10 @@ rfx_rem_dwt_2d_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + y;
-
-        /* pre */
         lptr = out_buffer + y;
         hptr = lptr + 64 * 33;
+
+        /* pre */
         x2n = ICL1(0);
         x2n1 = ICL1(1);
         x2n2 = ICL1(2);
@@ -116,16 +116,13 @@ rfx_rem_dwt_2d_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
     const sint16 *ic;
     sint16 ic62;
 
-    hl = out_buffer;
-    lh = hl + 31 * 33;
-    hh = lh + 33 * 31;
-    ll = hh + 31 * 31;
-
     for (y = 0; y < 33; y++) /* low */
     {
 
         /* setup */
         ic = in_buffer + 64 * y;
+        ll = out_buffer + 31 * 33 + 33 * 31 + 31 * 31 + 33 * y;
+        hl = out_buffer + 31 * y;
 
         /* pre */
         x2n = ic[0];
@@ -165,6 +162,8 @@ rfx_rem_dwt_2d_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + 64 * (33 + y);
+        lh = out_buffer + 31 * 33 + 33 * y;
+        hh = out_buffer + 31 * 33 + 33 * 31 + 31 * y;
 
         /* pre */
         x2n = ic[0];
@@ -222,10 +221,10 @@ rfx_rem_dwt_2d_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + y;
-
-        /* pre */
         lptr = out_buffer + y;
         hptr = lptr + 33 * 17;
+
+        /* pre */
         x2n = ICL2(0);
         x2n1 = ICL2(1);
         x2n2 = ICL2(2);
@@ -279,16 +278,13 @@ rfx_rem_dwt_2d_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
     const sint16 *ic;
     sint16 ic30;
 
-    hl = out_buffer;
-    lh = hl + 16 * 17;
-    hh = lh + 17 * 16;
-    ll = hh + 16 * 16;
-
     for (y = 0; y < 17; y++) /* low */
     {
 
         /* setup */
         ic = in_buffer + 33 * y;
+        ll = out_buffer + 16 * 17 + 17 * 16 + 16 * 16 + 17 * y;
+        hl = out_buffer + 16 * y;
 
         /* pre */
         x2n = ic[0];
@@ -330,6 +326,8 @@ rfx_rem_dwt_2d_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + 33 * (17 + y);
+        lh = out_buffer + 16 * 17 + 17 * y;
+        hh = out_buffer + 16 * 17 + 17 * 16 + 16 * y;
 
         /* pre */
         x2n = ic[0];
@@ -389,10 +387,10 @@ rfx_rem_dwt_2d_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + y;
-
-        /* pre */
         lptr = out_buffer + y;
         hptr = lptr + 17 * 9;
+
+        /* pre */
         x2n = ICL3(0);
         x2n1 = ICL3(1);
         x2n2 = ICL3(2);
@@ -448,16 +446,13 @@ rfx_rem_dwt_2d_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
     const sint16 *ic;
     sint16 ic14;
 
-    hl = out_buffer;
-    lh = hl + 8 * 9;
-    hh = lh + 9 * 8;
-    ll = hh + 8 * 8;
-
     for (y = 0; y < 9; y++) /* low */
     {
 
         /* setup */
         ic = in_buffer + 17 * y;
+        ll = out_buffer + 8 * 9 + 9 * 8 + 8 * 8 + 9 * y;
+        hl = out_buffer + 8 * y;
 
         /* pre */
         x2n = ic[0];
@@ -499,6 +494,8 @@ rfx_rem_dwt_2d_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 
         /* setup */
         ic = in_buffer + 17 * (9 + y);
+        lh = out_buffer + 8 * 9 + 9 * y;
+        hh = out_buffer + 8 * 9 + 9 * 8 + 8 * y;
 
         /* pre */
         x2n = ic[0];

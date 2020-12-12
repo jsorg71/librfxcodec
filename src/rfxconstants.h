@@ -54,6 +54,12 @@ enum _RLGR_MODE
 #define PRO_WBT_TILE_PROGRESSIVE_FIRST      0xCCC6
 #define PRO_WBT_TILE_PROGRESSIVE_UPGRADE    0xCCC7
 
+#define RFX_SUBBAND_DIFFING     0x01
+
+#define RFX_DWT_REDUCE_EXTRAPOLATE      0x01
+
+#define RFX_TILE_DIFFERENCE     0x01
+
 /* tileSize */
 #define CT_TILE_64x64           0x0040
 

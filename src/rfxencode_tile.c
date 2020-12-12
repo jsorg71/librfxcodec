@@ -33,10 +33,13 @@
 #include "rfxconstants.h"
 #include "rfxencode_tile.h"
 #include "rfxencode_dwt.h"
+#include "rfxencode_dwt_rem.h"
 #include "rfxencode_quantization.h"
 #include "rfxencode_differential.h"
 #include "rfxencode_rlgr1.h"
 #include "rfxencode_rlgr3.h"
+#include "rfxencode_diff_rlgr1.h"
+#include "rfxencode_diff_rlgr3.h"
 #include "rfxencode_alpha.h"
 
 #ifdef RFX_USE_ACCEL_X86
@@ -474,11 +477,7 @@ rfx_rem_encode_component_rlgr1(struct rfxencode *enc, const char *qtable,
     {
         return 1;
     }
-    if (rfx_differential_encode(enc->dwt_buffer1 + 4015, 81) != 0)
-    {
-        return 1;
-    }
-    *size = rfx_rlgr1_encode(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfx_encode_diff_rlgr1(enc->dwt_buffer1, buffer, buffer_size, 0);
     return 0;
 }
 
@@ -520,11 +519,7 @@ rfx_rem_encode_component_rlgr3(struct rfxencode *enc, const char *qtable,
     {
         return 1;
     }
-    if (rfx_differential_encode(enc->dwt_buffer1 + 4015, 81) != 0)
-    {
-        return 1;
-    }
-    *size = rfx_rlgr3_encode(enc->dwt_buffer1, buffer, buffer_size);
+    *size = rfx_encode_diff_rlgr3(enc->dwt_buffer1, buffer, buffer_size, 0);
     return 0;
 }
 

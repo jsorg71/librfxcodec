@@ -238,6 +238,8 @@ rfx_compose_message_tile_yuv(struct rfxencode *enc, STREAM *s,
     {
         return 1;
     }
+    LLOGLN(10, ("rfx_compose_message_tile_yuv: YLen %d CbLen %d CrLen %d",
+           YLen, CbLen, CrLen));
     end_pos = stream_get_pos(s);
     stream_set_pos(s, start_pos + 2);
     stream_write_uint32(s, 19 + YLen + CbLen + CrLen); /* BlockT.blockLen */
@@ -593,6 +595,220 @@ rfx_compose_message_data(struct rfxencode *enc, STREAM *s,
         return 1;
     }
     if (rfx_compose_message_frame_end(enc, s) != 0)
+    {
+        return 1;
+    }
+    return 0;
+}
+
+/******************************************************************************/
+static int
+rfx_pro_compose_message_context(struct rfxencode *enc, STREAM *s)
+{
+    uint16 properties;
+    int rlgr;
+
+    if (stream_get_left(s) < 10)
+    {
+        return 1;
+    }
+    stream_write_uint16(s, PRO_WBT_CONTEXT);
+    stream_write_uint32(s, 10);
+    stream_write_uint8(s, 0); /* ctxId */
+    stream_write_uint16(s, CT_TILE_64x64); /* tileSize */
+    stream_write_uint8(s, RFX_SUBBAND_DIFFING); /* flags */
+    return 0;
+}
+
+/******************************************************************************/
+int
+rfx_pro_compose_message_header(struct rfxencode *enc, STREAM *s)
+{
+    if (rfx_compose_message_sync(enc, s) != 0)
+    {
+        return 1;
+    }
+    if (rfx_pro_compose_message_context(enc, s) != 0)
+    {
+        return 1;
+    }
+    enc->header_processed = 1;
+    return 0;
+}
+
+/******************************************************************************/
+static int
+rfx_pro_compose_message_frame_begin(struct rfxencode *enc, STREAM *s)
+{
+    if (stream_get_left(s) < 12)
+    {
+        return 1;
+    }
+    stream_write_uint16(s, PRO_WBT_FRAME_BEGIN);
+    stream_write_uint32(s, 12);
+    stream_write_uint32(s, enc->frame_idx);
+    stream_write_uint16(s, 1);
+    enc->frame_idx++;
+    return 0;
+}
+
+/******************************************************************************/
+static int
+rfx_pro_compose_message_tile_simple_yuv(struct rfxencode *enc, STREAM *s,
+                                        const char *tile_data,
+                                        int tile_width, int tile_height,
+                                        int stride_bytes,
+                                        const char *quantVals, int quantIdxY,
+                                        int quantIdxCb, int quantIdxCr,
+                                        int xIdx, int yIdx)
+{
+    int YLen = 0;
+    int CbLen = 0;
+    int CrLen = 0;
+    int start_pos;
+    int end_pos;
+
+    start_pos = stream_get_pos(s);
+    stream_write_uint16(s, PRO_WBT_TILE_SIMPLE);
+    stream_seek_uint32(s); /* set later */
+    stream_write_uint8(s, quantIdxY);
+    stream_write_uint8(s, quantIdxCb);
+    stream_write_uint8(s, quantIdxCr);
+    stream_write_uint16(s, xIdx);
+    stream_write_uint16(s, yIdx);
+    stream_write_uint8(s, 0); /* flags */
+    //stream_write_uint8(s, RFX_TILE_DIFFERENCE); /* flags */
+    stream_seek(s, 8); /* set later */
+    if (rfx_encode_yuv(enc, tile_data, tile_width, tile_height,
+                       stride_bytes,
+                       quantVals + quantIdxY * 5,
+                       quantVals + quantIdxCb * 5,
+                       quantVals + quantIdxCr * 5,
+                       s, &YLen, &CbLen, &CrLen) != 0)
+    {
+        return 1;
+    }
+    LLOGLN(10, ("rfx_pro_compose_message_tile_simple_yuv: YLen %d CbLen %d "
+           "CrLen %d", YLen, CbLen, CrLen));
+    end_pos = stream_get_pos(s);
+    stream_set_pos(s, start_pos + 2);
+    stream_write_uint32(s, end_pos - start_pos);
+    stream_set_pos(s, start_pos + 14);
+    stream_write_uint16(s, YLen);
+    stream_write_uint16(s, CbLen);
+    stream_write_uint16(s, CrLen);
+    stream_write_uint16(s, 0);
+    stream_set_pos(s, end_pos);
+    return 0;
+}
+
+/******************************************************************************/
+static int
+rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
+                               const struct rfx_rect *regions, int num_regions,
+                               const char *buf, int width, int height,
+                               int stride_bytes,
+                               const struct rfx_tile *tiles, int num_tiles,
+                               const char *quants, int num_quants,
+                               int flags)
+{
+    int index;
+    int start_pos;
+    int start_tile_pos;
+    int end_pos;
+    int x;
+    int y;
+    int cx;
+    int cy;
+    int quantIdxY;
+    int quantIdxCb;
+    int quantIdxCr;
+    const char *tile_data;
+
+    start_pos = stream_get_pos(s);
+    stream_write_uint16(s, PRO_WBT_REGION);
+    stream_seek_uint32(s); /* set later */
+    stream_write_uint8(s, CT_TILE_64x64);
+    stream_write_uint16(s, num_regions);
+    stream_write_uint8(s, num_quants);
+    stream_write_uint8(s, 0); /* numProgQuant */
+    stream_write_uint8(s, RFX_DWT_REDUCE_EXTRAPOLATE); /* flags */
+    stream_write_uint16(s, num_tiles);
+    stream_seek_uint32(s); /* set later */
+    for (index = 0; index < num_regions; index++)
+    {
+        stream_write_uint16(s, regions[index].x);
+        stream_write_uint16(s, regions[index].y);
+        stream_write_uint16(s, regions[index].cx);
+        stream_write_uint16(s, regions[index].cy);
+    }
+    memcpy(s->p, quants, num_quants * 5);
+    s->p += num_quants * 5;
+    start_tile_pos = stream_get_pos(s);
+    for (index = 0; index < num_tiles; index++)
+    {
+        x = tiles[index].x;
+        y = tiles[index].y;
+        cx = tiles[index].cx;
+        cy = tiles[index].cy;
+        quantIdxY = tiles[index].quant_y;
+        quantIdxCb = tiles[index].quant_cb;
+        quantIdxCr = tiles[index].quant_cr;
+        tile_data = buf + (y << 8) * (stride_bytes >> 8) + (x << 8);
+        if (rfx_pro_compose_message_tile_simple_yuv(enc, s, tile_data,
+                                                    cx, cy, stride_bytes,
+                                                    quants, quantIdxY,
+                                                    quantIdxCb, quantIdxCr,
+                                                    x / 64, y / 64) != 0)
+        {
+            return 1;
+        }
+    }
+    end_pos = stream_get_pos(s);
+    stream_set_pos(s, start_pos + 2);
+    stream_write_uint32(s, end_pos - start_pos);
+    stream_set_pos(s, start_pos + 14);
+    stream_write_uint32(s, end_pos - start_tile_pos);
+    stream_set_pos(s, end_pos);
+    return 0;
+}
+
+/******************************************************************************/
+static int
+rfx_pro_compose_message_frame_end(struct rfxencode *enc, STREAM *s)
+{
+    if (stream_get_left(s) < 6)
+    {
+        return 1;
+    }
+    stream_write_uint16(s, PRO_WBT_FRAME_END);
+    stream_write_uint32(s, 6);
+    return 0;
+}
+
+/******************************************************************************/
+int
+rfx_pro_compose_message_data(struct rfxencode *enc, STREAM *s,
+                             const struct rfx_rect *regions, int num_regions,
+                             const char *buf, int width, int height,
+                             int stride_bytes,
+                             const struct rfx_tile *tiles, int num_tiles,
+                             const char *quants, int num_quants,
+                             int flags)
+{
+    LLOGLN(10, ("rfx_pro_compose_message_data:"));
+    if (rfx_pro_compose_message_frame_begin(enc, s) != 0)
+    {
+        return 1;
+    }
+    if (rfx_pro_compose_message_region(enc, s, regions, num_regions,
+                                       buf, width, height, stride_bytes,
+                                       tiles, num_tiles, quants, num_quants,
+                                       flags) != 0)
+    {
+        return 1;
+    }
+    if (rfx_pro_compose_message_frame_end(enc, s) != 0)
     {
         return 1;
     }

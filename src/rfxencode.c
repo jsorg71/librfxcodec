@@ -147,19 +147,31 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     }
     enc->format = format;
     /* assign encoding functions */
-    if (flags & RFX_FLAGS_NOACCEL)
+    if (flags & RFX_FLAGS_PRO1)
+    {
+        if (enc->mode == RLGR3)
+        {
+            printf("rfxcodec_encode_create: rfx_encode set to rfx_rem_encode_component_rlgr3\n");
+            enc->rfx_encode = rfx_rem_encode_component_rlgr3; /* rfxencode_tile.c */
+        }
+        else
+        {
+            printf("rfxcodec_encode_create: rfx_encode set to rfx_rem_encode_component_rlgr1\n");
+            enc->rfx_encode = rfx_rem_encode_component_rlgr1; /* rfxencode_tile.c */
+        }
+        enc->pro_ver = 1;
+    }
+    else if (flags & RFX_FLAGS_NOACCEL)
     {
         if (enc->mode == RLGR3)
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr3\n");
-            enc->rfx_rem_encode = rfx_encode_component_rlgr3; /* rfxencode_tile.c */
-            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr3; /* rfxencode_tile.c */
+            enc->rfx_encode = rfx_encode_component_rlgr3; /* rfxencode_tile.c */
         }
         else
         {
             printf("rfxcodec_encode_create: rfx_encode set to rfx_encode_component_rlgr1\n");
             enc->rfx_encode = rfx_encode_component_rlgr1; /* rfxencode_tile.c */
-            enc->rfx_rem_encode = rfx_rem_encode_component_rlgr1; /* rfxencode_tile.c */
         }
     }
     else
@@ -316,6 +328,30 @@ rfxcodec_encode_ex(void *handle, char *cdata, int *cdata_bytes,
     s.p = s.data;
     s.size = *cdata_bytes;
 
+    if (enc->pro_ver > 0)
+    {
+        /* Only the first frame should send the RemoteFX header */
+        if ((enc->frame_idx == 0) && (enc->header_processed == 0))
+        {
+            if (rfx_pro_compose_message_header(enc, &s) != 0)
+            {
+                return 1;
+            }
+        }
+        if (rfx_pro_compose_message_data(enc, &s, regions, num_regions,
+                                         buf, width, height, stride_bytes,
+                                         tiles, num_tiles, quants, num_quants,
+                                         flags) != 0)
+        {
+            return 1;
+        }
+        *cdata_bytes = (int) (s.p - s.data);
+
+        rfxcodec_hexdump(s.data, *cdata_bytes);
+
+        return 0;
+    }
+
     /* Only the first frame should send the RemoteFX header */
     if ((enc->frame_idx == 0) && (enc->header_processed == 0))
     {
@@ -346,5 +382,49 @@ rfxcodec_encode(void *handle, char *cdata, int *cdata_bytes,
     return rfxcodec_encode_ex(handle, cdata, cdata_bytes, buf, width, height,
                               stride_bytes, regions, num_regions, tiles,
                               num_tiles, quants, num_quants, 0);
+}
+
+/*****************************************************************************/
+/* produce a hex dump */
+void
+rfxcodec_hexdump(const void *p, int len)
+{
+    unsigned char *line;
+    int i;
+    int thisline;
+    int offset;
+
+    line = (unsigned char *)p;
+    offset = 0;
+
+    while (offset < len)
+    {
+        printf("%04x ", offset);
+        thisline = len - offset;
+
+        if (thisline > 16)
+        {
+            thisline = 16;
+        }
+
+        for (i = 0; i < thisline; i++)
+        {
+            printf("%02x ", line[i]);
+        }
+
+        for (; i < 16; i++)
+        {
+            printf("   ");
+        }
+
+        for (i = 0; i < thisline; i++)
+        {
+            printf("%c", (line[i] >= 0x20 && line[i] < 0x7f) ? line[i] : '.');
+        }
+
+        printf("%s", "\n");
+        offset += thisline;
+        line += thisline;
+    }
 }
 
