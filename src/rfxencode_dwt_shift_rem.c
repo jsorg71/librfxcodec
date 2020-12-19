@@ -41,9 +41,18 @@
 #define LOL3(_offset) lo[(_offset) * 17]
 #define HIL3(_offset) hi[(_offset) * 17]
 
+#define SETUPLOQ(_index, _shift) do { \
+    lo_fact = (((quants[_index] >> (_shift)) & 0xf) - 6) + DWT_FACTOR; \
+    lo_half = 1 << (hi_fact - 1); } while (0)
+#define SETUPHIQ(_index, _shift) do { \
+    hi_fact = (((quants[_index] >> (_shift)) & 0xf) - 6) + DWT_FACTOR; \
+    hi_half = 1 << (hi_fact - 1); } while (0)
+#define LOQ(_val) ((_val) + lo_half) >> lo_fact
+#define HIQ(_val) ((_val) + hi_half) >> hi_fact
+
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
 {
     const uint8 *ic; /* input coefficients */
     sint16 *lo;
@@ -101,7 +110,8 @@ rfx_rem_dwt_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
+                                  const char *quants)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -119,6 +129,7 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
     int lo_half;
     int hi_half;
 
+    SETUPHIQ(4, 0); /* HL1 */
     for (y = 0; y < 33; y++) /* lo */
     {
 
@@ -131,7 +142,7 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
         lo[0] = x2n + hn; /* mirror */
 
         /* loop */
@@ -141,7 +152,7 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
             lo[n] = x2n + ((hn1 + hn) >> 1);
         }
 
@@ -160,6 +171,8 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
 
     }
 
+    SETUPLOQ(3, 4); /* LH1 */
+    SETUPHIQ(4, 4); /* HH1 */
     for (y = 0; y < 31; y++) /* hi */
     {
 
@@ -172,8 +185,8 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[0] = x2n + hn;
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[0] = LOQ(x2n + hn);
 
         /* loop */
         for (n = 1; n < 31; n++)
@@ -182,8 +195,8 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
         }
 
         /* post */
@@ -191,13 +204,13 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
         ic62 = x2n = x2n2;
         x2n1 = ic[63];
         x2n2 = 2 * x2n1 - x2n; /* ic[64] = 2 * ic[63] - ic[62] */
-        lo[31] = x2n + (hn1 >> 1);
+        lo[31] = LOQ(x2n + (hn1 >> 1));
 
         x2n = x2n2;
         /* x2n1 already set, mirror 65 -> 63 */
         x2n2 = ic62;      /* mirror 66 -> 62 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[32] = x2n + (hn >> 1);
+        lo[32] = LOQ(x2n + (hn >> 1));
 
     }
 
@@ -205,7 +218,7 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -265,7 +278,8 @@ rfx_rem_dwt_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
+                                  const char *quants)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -283,6 +297,7 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
     int lo_half;
     int hi_half;
 
+    SETUPHIQ(2, 4); /* HL2 */
     for (y = 0; y < 17; y++) /* lo */
     {
 
@@ -295,7 +310,7 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
         lo[0] = x2n + hn;
 
         /* loop */
@@ -305,7 +320,7 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
             lo[n] = x2n + ((hn1 + hn) >> 1);
         }
 
@@ -314,7 +329,7 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
         ic30 = x2n = x2n2;
         x2n1 = ic[31];
         x2n2 = ic[32];
-        hi[15] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
+        hi[15] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
         lo[15] = x2n + ((hn1 + hn) >> 1);
 
         hn1 = hn;
@@ -326,6 +341,8 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
     }
 
+    SETUPLOQ(2, 0); /* LH2 */
+    SETUPHIQ(3, 0); /* HH2 */
     for (y = 0; y < 16; y++) /* hi */
     {
 
@@ -338,8 +355,8 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[0] = x2n + hn;
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[0] = LOQ(x2n + hn);
 
         /* loop */
         for (n = 1; n < 15; n++)
@@ -348,8 +365,8 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
         }
 
         /* post */
@@ -357,15 +374,15 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
         ic30 = x2n = x2n2;
         x2n1 = ic[31];
         x2n2 = ic[32];
-        hi[15] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[15] = x2n + ((hn1 + hn) >> 1);
+        hi[15] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[15] = LOQ(x2n + ((hn1 + hn) >> 1));
 
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 33 -> 31 */
         x2n2 = ic30;      /* mirror 34 -> 30 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[16] = x2n + ((hn1 + hn) >> 1);
+        lo[16] = LOQ(x2n + ((hn1 + hn) >> 1));
 
     }
 
@@ -373,7 +390,7 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -433,7 +450,8 @@ rfx_rem_dwt_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_rem_dwt_shift_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer,
+                                  const char *quants)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -451,6 +469,8 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
     int lo_half;
     int hi_half;
 
+    SETUPLOQ(0, 0); /* LL3 */
+    SETUPHIQ(1, 0); /* HL3 */
     for (y = 0; y < 9; y++) /* lo */
     {
 
@@ -463,8 +483,8 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[0] = x2n + hn; /* mirror */
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[0] = LOQ(x2n + hn); /* mirror */
 
         /* loop */
         for (n = 1; n < 7; n++)
@@ -473,8 +493,8 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
         }
 
         /* post */
@@ -482,18 +502,20 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
         ic14 = x2n = x2n2;
         x2n1 = ic[15];
         x2n2 = ic[16];
-        hi[7] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[7] = x2n + ((hn1 + hn) >> 1);
+        hi[7] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[7] = LOQ(x2n + ((hn1 + hn) >> 1));
 
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 17 -> 15 */
         x2n2 = ic14;      /* mirror 18 -> 14 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[8] = x2n + ((hn1 + hn) >> 1);
+        lo[8] = LOQ(x2n + ((hn1 + hn) >> 1));
 
     }
 
+    SETUPLOQ(0, 4); /* LH3 */
+    SETUPHIQ(1, 4); /* HH3 */
     for (y = 0; y < 8; y++) /* hi */
     {
 
@@ -506,8 +528,8 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
         x2n = ic[0];
         x2n1 = ic[1];
         x2n2 = ic[2];
-        hi[0] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[0] = x2n + hn; /* mirror */
+        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[0] = LOQ(x2n + hn); /* mirror */
 
         /* loop */
         for (n = 1; n < 7; n++)
@@ -516,8 +538,8 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
             x2n = x2n2;
             x2n1 = ic[2 * n + 1];
             x2n2 = ic[2 * n + 2];
-            hi[n] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
         }
 
         /* post */
@@ -525,15 +547,15 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
         ic14 = x2n = x2n2;
         x2n1 = ic[15];
         x2n2 = ic[16];
-        hi[7] = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[7] = x2n + ((hn1 + hn) >> 1);
+        hi[7] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
+        lo[7] = LOQ(x2n + ((hn1 + hn) >> 1));
 
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 17 -> 15 */
         x2n2 = ic14;      /* mirror 18 -> 14 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[8] = x2n + ((hn1 + hn) >> 1);
+        lo[8] = LOQ(x2n + ((hn1 + hn) >> 1));
 
     }
 
@@ -541,14 +563,14 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 
 /******************************************************************************/
 int
-rfx_rem_dwt_encode(const uint8 *in_buffer, sint16 *out_buffer,
-                   sint16 *tmp_buffer)
+rfx_rem_dwt_shift_encode(const uint8 *in_buffer, sint16 *out_buffer,
+                         sint16 *tmp_buffer, const char *quants)
 {
-    rfx_rem_dwt_encode_vert_lv1(in_buffer, tmp_buffer);
-    rfx_rem_dwt_encode_horz_lv1(tmp_buffer, out_buffer);
-    rfx_rem_dwt_encode_vert_lv2(out_buffer + 3007, tmp_buffer);
-    rfx_rem_dwt_encode_horz_lv2(tmp_buffer, out_buffer + 3007);
-    rfx_rem_dwt_encode_vert_lv3(out_buffer + 3807, tmp_buffer);
-    rfx_rem_dwt_encode_horz_lv3(tmp_buffer, out_buffer + 3807);
+    rfx_rem_dwt_shift_encode_vert_lv1(in_buffer, tmp_buffer);
+    rfx_rem_dwt_shift_encode_horz_lv1(tmp_buffer, out_buffer, quants);
+    rfx_rem_dwt_shift_encode_vert_lv2(out_buffer + 3007, tmp_buffer);
+    rfx_rem_dwt_shift_encode_horz_lv2(tmp_buffer, out_buffer + 3007, quants);
+    rfx_rem_dwt_shift_encode_vert_lv3(out_buffer + 3807, tmp_buffer);
+    rfx_rem_dwt_shift_encode_horz_lv3(tmp_buffer, out_buffer + 3807, quants);
     return 0;
 }

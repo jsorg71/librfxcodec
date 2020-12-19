@@ -60,6 +60,10 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     enc->dwt_buffer = (sint16 *) (((size_t) (enc->dwt_buffer_a)) & ~15);
     enc->dwt_buffer1 = (sint16 *) (((size_t) (enc->dwt_buffer1_a)) & ~15);
     enc->dwt_buffer2 = (sint16 *) (((size_t) (enc->dwt_buffer2_a)) & ~15);
+    enc->dwt_buffer3 = (sint16 *) (((size_t) (enc->dwt_buffer3_a)) & ~15);
+    enc->dwt_buffer4 = (sint16 *) (((size_t) (enc->dwt_buffer4_a)) & ~15);
+    enc->dwt_buffer5 = (sint16 *) (((size_t) (enc->dwt_buffer5_a)) & ~15);
+    enc->dwt_buffer6 = (sint16 *) (((size_t) (enc->dwt_buffer6_a)) & ~15);
 
 #if defined(RFX_USE_ACCEL_X86)
     cpuid_x86(1, 0, &ax, &bx, &cx, &dx);
@@ -149,16 +153,6 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     /* assign encoding functions */
     if (flags & RFX_FLAGS_PRO1)
     {
-        if (enc->mode == RLGR3)
-        {
-            printf("rfxcodec_encode_create: rfx_encode set to rfx_rem_encode_component_rlgr3\n");
-            enc->rfx_encode = rfx_rem_encode_component_rlgr3; /* rfxencode_tile.c */
-        }
-        else
-        {
-            printf("rfxcodec_encode_create: rfx_encode set to rfx_rem_encode_component_rlgr1\n");
-            enc->rfx_encode = rfx_rem_encode_component_rlgr1; /* rfxencode_tile.c */
-        }
         enc->pro_ver = 1;
     }
     else if (flags & RFX_FLAGS_NOACCEL)
@@ -299,11 +293,20 @@ int
 rfxcodec_encode_destroy(void *handle)
 {
     struct rfxencode *enc;
+    int index;
+    int jndex;
 
     enc = (struct rfxencode *) handle;
     if (enc == 0)
     {
         return 0;
+    }
+    for (index = 0; index < 64; index++)
+    {
+        for (jndex = 0; jndex < 64; jndex++)
+        {
+            free(enc->rbs[index][jndex]);
+        }
     }
     free(enc);
     return 0;
@@ -344,9 +347,6 @@ rfxcodec_encode_ex(void *handle, char *cdata, int *cdata_bytes,
             return 1;
         }
         *cdata_bytes = (int) (s.p - s.data);
-
-        rfxcodec_hexdump(s.data, *cdata_bytes);
-
         return 0;
     }
 

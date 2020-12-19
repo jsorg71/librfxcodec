@@ -25,6 +25,13 @@ typedef int (*rfx_encode_proc)(struct rfxencode *enc, const char *qtable,
                                const uint8 *data,
                                uint8 *buffer, int buffer_size, int *size);
 
+struct rfx_rb
+{
+    sint16 y[4096];
+    sint16 u[4096];
+    sint16 v[4096];
+};
+
 struct rfxencode
 {
     int width;
@@ -47,11 +54,21 @@ struct rfxencode
     sint16 dwt_buffer_a[4096];
     sint16 dwt_buffer1_a[4096];
     sint16 dwt_buffer2_a[4096];
+    sint16 dwt_buffer3_a[4096];
+    sint16 dwt_buffer4_a[4096];
+    sint16 dwt_buffer5_a[4096];
+    sint16 dwt_buffer6_a[4096];
     uint8 pad2[16];
     sint16 *dwt_buffer;
     sint16 *dwt_buffer1;
     sint16 *dwt_buffer2;
+    sint16 *dwt_buffer3;
+    sint16 *dwt_buffer4;
+    sint16 *dwt_buffer5;
+    sint16 *dwt_buffer6;
     rfx_encode_proc rfx_encode;
+
+    struct rfx_rb * rbs[64][64];
 
     int got_sse2;
     int got_sse3;

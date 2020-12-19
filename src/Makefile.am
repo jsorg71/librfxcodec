@@ -32,7 +32,8 @@ noinst_HEADERS = \
   rfxencode_tile.h \
   rfxencode_diff_rlgr1.h \
   rfxencode_diff_rlgr3.h \
-  rfxencode_dwt_rem.h
+  rfxencode_dwt_rem.h \
+  rfxencode_dwt_shift_rem.h
 
 lib_LTLIBRARIES = librfxencode.la
 
@@ -41,4 +42,4 @@ librfxencode_la_SOURCES = $(noinst_HEADERS) rfxencode.c \
   rfxencode_quantization.c rfxencode_differential.c \
   rfxencode_rlgr1.c rfxencode_rlgr3.c rfxencode_alpha.c \
   rfxencode_diff_rlgr1.c rfxencode_diff_rlgr3.c \
-  rfxencode_dwt_rem.c
+  rfxencode_dwt_rem.c rfxencode_dwt_shift_rem.c

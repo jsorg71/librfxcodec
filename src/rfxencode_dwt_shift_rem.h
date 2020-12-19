@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-#ifndef __RFXENCODE_RFX_REM_DWT_H
-#define __RFXENCODE_RFX_REM_DWT_H
+#ifndef __RFXENCODE_DWT_SHIFT_REM_H
+#define __RFXENCODE_DWT_SHIFT_REM_H
 
 int
-rfx_rem_dwt_encode(const uint8 *in_buffer, sint16 *out_buffer,
-                   sint16 *tmp_buffer);
+rfx_rem_dwt_shift_encode(const uint8 *in_buffer, sint16 *out_buffer,
+                         sint16 *tmp_buffer, const char *quants);
 
 #endif

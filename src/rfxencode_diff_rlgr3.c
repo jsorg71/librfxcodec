@@ -123,7 +123,7 @@ rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size,
     uint32 sum2Ms;
     uint32 nIdx;
 
-    /* the last 64 bytes are diff */
+    /* the last x bytes are diff */
     for (k = PIXELS_IN_TILE - 1; k > PIXELS_IN_TILE - diff_bytes; k--)
     {
         coef[k] -= coef[k - 1];
@@ -151,9 +151,13 @@ rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size,
             numZeros = 0;
 
             GetNextInput;
-            while (input == 0 && coef_size > 0)
+            while (input == 0)
             {
                 numZeros++;
+                if (coef_size < 1)
+                {
+                    break;
+                }
                 GetNextInput;
             }
 
@@ -187,6 +191,11 @@ rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size,
 
             CheckWrite;
 
+            if (input == 0)
+            {
+                continue;
+            }
+
             /* encode the nonzero value using GR coding */
             if (input < 0)
             {
@@ -203,7 +212,7 @@ rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size,
             bits |= sign;
             bit_count++;
 
-            lmag = mag ? mag - 1 : 0;
+            lmag = mag - 1;
 
             CodeGR(krp, lmag); /* output GR code for (mag - 1) */
             CheckWrite;
