@@ -114,10 +114,6 @@ rfx_rem_dwt_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer)
     sint16 ic62;
     int n;
     int y;
-    int lo_fact;
-    int hi_fact;
-    int lo_half;
-    int hi_half;
 
     for (y = 0; y < 33; y++) /* lo */
     {
@@ -278,10 +274,6 @@ rfx_rem_dwt_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer)
     sint16 ic30;
     int n;
     int y;
-    int lo_fact;
-    int hi_fact;
-    int lo_half;
-    int hi_half;
 
     for (y = 0; y < 17; y++) /* lo */
     {
@@ -446,10 +438,6 @@ rfx_rem_dwt_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer)
     sint16 ic14;
     int n;
     int y;
-    int lo_fact;
-    int hi_fact;
-    int lo_half;
-    int hi_half;
 
     for (y = 0; y < 9; y++) /* lo */
     {

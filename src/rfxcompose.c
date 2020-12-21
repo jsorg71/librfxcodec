@@ -612,9 +612,6 @@ rfx_compose_message_data(struct rfxencode *enc, STREAM *s,
 static int
 rfx_pro_compose_message_context(struct rfxencode *enc, STREAM *s)
 {
-    uint16 properties;
-    int rlgr;
-
     if (stream_get_left(s) < 10)
     {
         return 1;
@@ -720,8 +717,6 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
     sint16 *dwt_buffer_y;
     sint16 *dwt_buffer_u;
     sint16 *dwt_buffer_v;
-
-    int crc;
 
     if (stream_get_left(s) < 18 + num_regions * 8 + num_quants * 5)
     {
