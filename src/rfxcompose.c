@@ -670,6 +670,15 @@ do { _count1 = 0; _count2 = 0; \
 } while (0);
 
 /******************************************************************************/
+/* coef1 = coef2 - coef3
+   QCdt = QCot - QCrb */
+#define DIFF_COEF(_coef1, _coef2, _coef3, _loop) \
+do { \
+    for (_loop = 0; _loop < 4096; _loop++) { \
+        _coef1[_loop] = _coef2[_loop] - _coef3[_loop]; } \
+} while (0);
+
+/******************************************************************************/
 static int
 rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
                                const struct rfx_rect *regions, int num_regions,
@@ -686,9 +695,9 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
     int end_pos;
     int x;
     int y;
-    int quantIdxY;
-    int quantIdxCb;
-    int quantIdxCr;
+    uint8 quantIdxY;
+    uint8 quantIdxCb;
+    uint8 quantIdxCr;
     const char *tile_data;
 
     int y_bytes;
@@ -696,8 +705,8 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
     int v_bytes;
     int tile_start_pos;
     int tile_end_pos;
-    int xIdx;
-    int yIdx;
+    uint16 xIdx;
+    uint16 yIdx;
 
     const uint8 *y_buffer;
     const uint8 *u_buffer;
@@ -744,12 +753,11 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
         stream_write_uint16(s, regions[index].cx);
         stream_write_uint16(s, regions[index].cy);
     }
-    memcpy(s->p, quants, num_quants * 5);
-    s->p += num_quants * 5;
+    stream_write(s, quants, num_quants * 5);
     tiles_start_pos = stream_get_pos(s);
     for (index = 0; index < num_tiles; index++)
     {
-        if (stream_get_left(s) < 16 * 1024)
+        if (stream_get_left(s) < 22)
         {
             return 1;
         }
@@ -758,9 +766,18 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
         quantIdxY = tiles[index].quant_y;
         quantIdxCb = tiles[index].quant_cb;
         quantIdxCr = tiles[index].quant_cr;
+        if ((quantIdxY >= num_quants) || (quantIdxCb >= num_quants) ||
+            (quantIdxCr >= num_quants))
+        {
+            return 1;
+        }
         tile_data = buf + (y << 8) * (stride_bytes >> 8) + (x << 8);
         xIdx = x / 64;
         yIdx = y / 64;
+        if ((xIdx >= RFX_MAX_RB_X) || (yIdx >= RFX_MAX_RB_Y))
+        {
+            return 1;
+        }
         tile_start_pos = stream_get_pos(s);
         stream_write_uint16(s, PRO_WBT_TILE_SIMPLE);
         stream_seek_uint32(s); /* set later */
@@ -780,7 +797,11 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
         rb = enc->rbs[xIdx][yIdx];
         if (rb == NULL)
         {
-            rb = (struct rfx_rb *) calloc(1, sizeof(struct rfx_rb));
+            rb = xnew(struct rfx_rb);
+            if (rb == NULL)
+            {
+                return 1;
+            }
             enc->rbs[xIdx][yIdx] = rb;
         }
         rfx_rem_dwt_shift_encode(y_buffer, enc->dwt_buffer1,
@@ -818,14 +839,26 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
         y_bytes = rfx_encode_diff_rlgr1(dwt_buffer_y,
                                         stream_get_tail(s),
                                         stream_get_left(s), 81);
+        if (y_bytes < 0)
+        {
+            return 1;
+        }
         stream_seek(s, y_bytes);
         u_bytes = rfx_encode_diff_rlgr1(dwt_buffer_u,
                                         stream_get_tail(s),
                                         stream_get_left(s), 81);
+        if (u_bytes < 0)
+        {
+            return 1;
+        }
         stream_seek(s, u_bytes);
         v_bytes = rfx_encode_diff_rlgr1(dwt_buffer_v,
                                         stream_get_tail(s),
                                         stream_get_left(s), 81);
+        if (v_bytes < 0)
+        {
+            return 1;
+        }
         stream_seek(s, v_bytes);
         LLOGLN(10, ("rfx_pro_compose_message_region: y_bytes %d "
                "u_bytes %d v_bytes %d", y_bytes, u_bytes, v_bytes));
@@ -848,6 +881,204 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
     stream_set_pos(s, end_pos);
     return 0;
 }
+
+#if 0
+/******************************************************************************/
+static int
+rfx_pro_compose_message_region1(struct rfxencode *enc, STREAM *s,
+                               const struct rfx_rect *regions, int num_regions,
+                               const char *buf, int width, int height,
+                               int stride_bytes,
+                               const struct rfx_tile *tiles, int num_tiles,
+                               const char *quants, int num_quants,
+                               int flags)
+{
+    int index;
+    int jndex;
+    int start_pos;
+    int tiles_start_pos;
+    int end_pos;
+    int ot_pos;
+    int dt_pos;
+    int x;
+    int y;
+    int quantIdxY;
+    int quantIdxCb;
+    int quantIdxCr;
+    const char *tile_data;
+
+    int y_bytes;
+    int u_bytes;
+    int v_bytes;
+    int y_diff_bytes;
+    int u_diff_bytes;
+    int v_diff_bytes;
+    int tile_start_pos;
+    int tile_end_pos;
+    int xIdx;
+    int yIdx;
+
+    const uint8 *y_buffer;
+    const uint8 *u_buffer;
+    const uint8 *v_buffer;
+    const char *y_quants;
+    const char *u_quants;
+    const char *v_quants;
+
+    struct rfx_rb *rb;
+    int tile_flags;
+
+    if (stream_get_left(s) < 18 + num_regions * 8 + num_quants * 5)
+    {
+        return 1;
+    }
+    if (quants == NULL)
+    {
+        num_quants = 1;
+        quants = (const char *) g_rfx_default_quantization_values;
+    }
+    start_pos = stream_get_pos(s);
+    stream_write_uint16(s, PRO_WBT_REGION);
+    stream_seek_uint32(s); /* blockLen, set later */
+    stream_write_uint8(s, CT_TILE_64x64);
+    stream_write_uint16(s, num_regions);
+    stream_write_uint8(s, num_quants);
+    stream_write_uint8(s, 0); /* numProgQuant */
+    stream_write_uint8(s, RFX_DWT_REDUCE_EXTRAPOLATE); /* flags */
+    stream_write_uint16(s, num_tiles);
+    stream_seek_uint32(s); /* tileDataSize, set later */
+    for (index = 0; index < num_regions; index++)
+    {
+        stream_write_uint16(s, regions[index].x);
+        stream_write_uint16(s, regions[index].y);
+        stream_write_uint16(s, regions[index].cx);
+        stream_write_uint16(s, regions[index].cy);
+    }
+    stream_write(s, quants, num_quants * 5);
+    tiles_start_pos = stream_get_pos(s);
+    for (index = 0; index < num_tiles; index++)
+    {
+        if (stream_get_left(s) < 16 * 1024)
+        {
+            return 1;
+        }
+        x = tiles[index].x;
+        y = tiles[index].y;
+        quantIdxY = tiles[index].quant_y;
+        quantIdxCb = tiles[index].quant_cb;
+        quantIdxCr = tiles[index].quant_cr;
+        tile_data = buf + (y << 8) * (stride_bytes >> 8) + (x << 8);
+        xIdx = x / 64;
+        yIdx = y / 64;
+        tile_start_pos = stream_get_pos(s);
+        stream_write_uint16(s, PRO_WBT_TILE_SIMPLE);
+        stream_seek_uint32(s); /* set later */
+        stream_write_uint8(s, quantIdxY);
+        stream_write_uint8(s, quantIdxCb);
+        stream_write_uint8(s, quantIdxCr);
+        stream_write_uint16(s, xIdx);
+        stream_write_uint16(s, yIdx);
+        stream_seek(s, 1); /* flags, set later */
+        stream_seek(s, 8); /* yLen, cbLen, crLen, tailLen, set later */
+        y_buffer = (const uint8 *) tile_data;
+        u_buffer = (const uint8 *) (tile_data + RFX_YUV_BTES);
+        v_buffer = (const uint8 *) (tile_data + RFX_YUV_BTES * 2);
+        y_quants = quants + quantIdxY * 5;
+        u_quants = quants + quantIdxCb * 5;
+        v_quants = quants + quantIdxCr * 5;
+        rb = enc->rbs[xIdx][yIdx];
+        if (rb == NULL)
+        {
+            rb = xnew(struct rfx_rb);
+            if (rb == NULL)
+            {
+                return 1;
+            }
+            enc->rbs[xIdx][yIdx] = rb;
+        }
+        rfx_rem_dwt_shift_encode(y_buffer, enc->dwt_buffer1,
+                                 enc->dwt_buffer, y_quants);
+        rfx_rem_dwt_shift_encode(u_buffer, enc->dwt_buffer2,
+                                 enc->dwt_buffer, u_quants);
+        rfx_rem_dwt_shift_encode(v_buffer, enc->dwt_buffer3,
+                                 enc->dwt_buffer, v_quants);
+        DIFF_COEF(enc->dwt_buffer4, enc->dwt_buffer1, rb->y, jndex);
+        DIFF_COEF(enc->dwt_buffer5, enc->dwt_buffer2, rb->u, jndex);
+        DIFF_COEF(enc->dwt_buffer6, enc->dwt_buffer3, rb->v, jndex);
+        memcpy(rb->y, enc->dwt_buffer1, sizeof(rb->y));
+        memcpy(rb->u, enc->dwt_buffer2, sizeof(rb->u));
+        memcpy(rb->v, enc->dwt_buffer3, sizeof(rb->v));
+        /* original tile */
+        ot_pos = stream_get_pos(s);
+        y_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer1,
+                                        stream_get_tail(s),
+                                        stream_get_left(s), 81);
+        stream_seek(s, y_bytes);
+        u_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer2,
+                                        stream_get_tail(s),
+                                        stream_get_left(s), 81);
+        stream_seek(s, u_bytes);
+        v_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer3,
+                                        stream_get_tail(s),
+                                        stream_get_left(s), 81);
+        stream_seek(s, v_bytes);
+        /* diff tile */
+        dt_pos = stream_get_pos(s);
+        y_diff_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer4,
+                                             stream_get_tail(s),
+                                             stream_get_left(s), 81);
+        stream_seek(s, y_diff_bytes);
+        u_diff_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer5,
+                                             stream_get_tail(s),
+                                             stream_get_left(s), 81);
+        stream_seek(s, u_diff_bytes);
+        v_diff_bytes = rfx_encode_diff_rlgr1(enc->dwt_buffer6,
+                                             stream_get_tail(s),
+                                             stream_get_left(s), 81);
+        stream_seek(s, v_diff_bytes);
+        if (y_diff_bytes + u_diff_bytes + v_diff_bytes <
+            y_bytes + u_bytes + v_bytes)
+        {
+            LLOGLN(10, ("rfx_pro_compose_message_region: diff"));
+            tile_flags = RFX_TILE_DIFFERENCE;
+            memmove(s->data + ot_pos, s->data + dt_pos,
+                    y_diff_bytes + u_diff_bytes + v_diff_bytes);
+            stream_set_pos(s, ot_pos);
+            stream_seek(s, y_diff_bytes);
+            stream_seek(s, u_diff_bytes);
+            stream_seek(s, v_diff_bytes);
+            y_bytes = y_diff_bytes;
+            u_bytes = u_diff_bytes;
+            v_bytes = v_diff_bytes;
+        }
+        else
+        {
+            LLOGLN(10, ("rfx_pro_compose_message_region: orig"));
+            tile_flags = 0;
+            stream_set_pos(s, dt_pos);
+        }
+        LLOGLN(10, ("rfx_pro_compose_message_region: y_bytes %d "
+               "u_bytes %d v_bytes %d", y_bytes, u_bytes, v_bytes));
+        tile_end_pos = stream_get_pos(s);
+        stream_set_pos(s, tile_start_pos + 2);
+        stream_write_uint32(s, tile_end_pos - tile_start_pos); /* blockLen */
+        stream_set_pos(s, tile_start_pos + 13);
+        stream_write_uint8(s, tile_flags); /* flags */
+        stream_write_uint16(s, y_bytes); /* yLen */
+        stream_write_uint16(s, u_bytes); /* cbLen */
+        stream_write_uint16(s, v_bytes); /* crLen */
+        stream_write_uint16(s, 0); /* tailLen */
+        stream_set_pos(s, tile_end_pos);
+    }
+    end_pos = stream_get_pos(s);
+    stream_set_pos(s, start_pos + 2);
+    stream_write_uint32(s, end_pos - start_pos); /* blockLen */
+    stream_set_pos(s, start_pos + 14);
+    stream_write_uint32(s, end_pos - tiles_start_pos); /* tileDataSize */
+    stream_set_pos(s, end_pos);
+    return 0;
+}
+#endif
 
 /******************************************************************************/
 static int

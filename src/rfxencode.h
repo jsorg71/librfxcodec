@@ -32,6 +32,10 @@ struct rfx_rb
     sint16 v[4096];
 };
 
+
+#define RFX_MAX_RB_X 64
+#define RFX_MAX_RB_Y 64
+
 struct rfxencode
 {
     int width;
@@ -68,7 +72,7 @@ struct rfxencode
     sint16 *dwt_buffer6;
     rfx_encode_proc rfx_encode;
 
-    struct rfx_rb * rbs[64][64];
+    struct rfx_rb * rbs[RFX_MAX_RB_X][RFX_MAX_RB_Y];
 
     int got_sse2;
     int got_sse3;
