@@ -52,6 +52,11 @@
 #define CheckWrite do { \
     while (bit_count >= 8) \
     { \
+        if (cdata_size < 1) \
+        { \
+            return -1; \
+        } \
+        cdata_size--; \
         bit_count -= 8; \
         *cdata = bits >> bit_count; \
         cdata++; \
@@ -286,6 +291,10 @@ rfx_encode_diff_rlgr3(sint16 *coef, uint8 *cdata, int cdata_size,
 
     if (bit_count > 0)
     {
+        if (cdata_size < 1)
+        {
+            return -1;
+        }
         bits <<= 8 - bit_count;
         *cdata = bits;
         cdata++;
