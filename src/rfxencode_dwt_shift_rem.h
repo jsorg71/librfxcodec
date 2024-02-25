@@ -1,7 +1,7 @@
 /**
  * RFX codec encoder
  *
- * Copyright 2020 Jay Sorg <jay.sorg@gmail.com>
+ * Copyright 2020-2024 Jay Sorg <jay.sorg@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@
 #define __RFXENCODE_DWT_SHIFT_REM_H
 
 int
-rfx_rem_dwt_shift_encode(const uint8 *in_buffer, sint16 *out_buffer,
+rfx_encode_dwt_shift_rem(const uint8 *in_buffer, sint16 *out_buffer,
                          sint16 *tmp_buffer, const char *quants);
 
 #endif
