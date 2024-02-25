@@ -844,11 +844,11 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
             }
             enc->rbs[xIdx][yIdx] = rb;
         }
-        enc->rfx_rem_dwt_shift_encode(y_buffer, enc->dwt_buffer1,
+        enc->rfx_encode_dwt_shift_rem(y_buffer, enc->dwt_buffer1,
                                       enc->dwt_buffer, y_quants);
-        enc->rfx_rem_dwt_shift_encode(u_buffer, enc->dwt_buffer2,
+        enc->rfx_encode_dwt_shift_rem(u_buffer, enc->dwt_buffer2,
                                       enc->dwt_buffer, u_quants);
-        enc->rfx_rem_dwt_shift_encode(v_buffer, enc->dwt_buffer3,
+        enc->rfx_encode_dwt_shift_rem(v_buffer, enc->dwt_buffer3,
                                       enc->dwt_buffer, v_quants);
         COEF_DIFF_COUNT_COPY(enc->dwt_buffer4, enc->dwt_buffer1, rb->y,
                              jndex, dt_y_zeros, ot_y_zeros);

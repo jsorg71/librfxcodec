@@ -216,7 +216,7 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     enc->format = format;
     enc->rfx_encode_rgb_to_yuv = rfx_encode_rgb_to_yuv;
     enc->rfx_encode_argb_to_yuva = rfx_encode_argb_to_yuva;
-    enc->rfx_rem_dwt_shift_encode = rfx_rem_dwt_shift_encode;
+    enc->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem;
     /* assign encoding functions */
     if (flags & RFX_FLAGS_PRO1)
     {
