@@ -35,11 +35,14 @@ typedef int (*rfx_encode_proc)(struct rfxencode *enc, const char *qtable,
 typedef int
 (*rfx_encode_dwt_shift_rem_proc)(const uint8 *in_buffer, sint16 *out_buffer,
                                  sint16 *tmp_buffer, const char *quants);
+<<<<<<< HEAD
 typedef int
 (*rfx_encode_diff_count_proc)(sint16 *diff_buffer,
                               const sint16 *dwt_buffer,
                               const sint16 *hist_buffer,
                               int *diff_zeros, int *dwt_zeros);
+=======
+>>>>>>> 4313da52f87c738a98e5694c8a7d3e3890ecd002
 
 struct rfx_rb
 {
