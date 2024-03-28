@@ -1,3 +1,4 @@
+
 /**
  * RFX codec encoder
  *
@@ -217,10 +218,15 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     enc->rfx_encode_rgb_to_yuv = rfx_encode_rgb_to_yuv;
     enc->rfx_encode_argb_to_yuva = rfx_encode_argb_to_yuva;
     enc->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem;
+    enc->rfx_encode_diff_count = rfx_encode_diff_count;
     /* assign encoding functions */
     if (flags & RFX_FLAGS_PRO1)
     {
         enc->pro_ver = 1;
+#if defined(RFX_USE_ACCEL_AMD64)
+        enc->rfx_encode_diff_count = rfx_encode_diff_count_amd64;
+        enc->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem_amd64;
+#endif
     }
     else if (flags & RFX_FLAGS_NOACCEL)
     {
