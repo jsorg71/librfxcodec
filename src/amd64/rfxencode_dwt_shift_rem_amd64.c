@@ -32,19 +32,19 @@
 #define IC_L0(_val, _offset) _val = ic[(_offset)]
 #define OC_LL1(_offset, _val) lo[(_offset)] = _val
 #define OC_HL1(_offset, _val) hi[(_offset)] = _val
-#define IC_L0V(_val1, _val2, _val3, _offset) do { \
+#define IC_L0V(_x2nv, _x2n1v, _x2n2v, _offset) do { \
     v1 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset))); \
     v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
-    _val1 = _mm_packs_epi32(_mm_srai_epi32( \
+    _x2nv = _mm_packs_epi32(_mm_srai_epi32( \
                             _mm_slli_epi32(v1, 16), 16), \
                             _mm_srai_epi32( \
                             _mm_slli_epi32(v2, 16), 16)); \
-    _val2 = _mm_packs_epi32(_mm_srai_epi32( \
-                            _mm_slli_epi32(_mm_srli_si128(v1, 2), 16), 16), \
-                            _mm_srai_epi32( \
-                            _mm_slli_epi32(_mm_srli_si128(v2, 2), 16), 16)); \
-    _val3 = _mm_insert_epi16(_mm_srli_si128(x2nv, 2), \
-                             ic[(_offset) * 2 + 16], 7); \
+    _x2n1v = _mm_packs_epi32(_mm_srai_epi32( \
+                             _mm_slli_epi32(_mm_srli_si128(v1, 2), 16), 16), \
+                             _mm_srai_epi32( \
+                             _mm_slli_epi32(_mm_srli_si128(v2, 2), 16), 16)); \
+    _x2n2v = _mm_insert_epi16(_mm_srli_si128(_x2nv, 2), \
+                              ic[(_offset) * 2 + 16], 7); \
 } while (0)
 #define OC_LL1V(_offset, _val) \
     _mm_storeu_si128((__m128i *)(lo + (_offset)), _val)
@@ -145,11 +145,9 @@
 #define NOQ(_val) _val
 
 #define SETUPLOQV \
-    lo_halfv = _mm_set_epi16(lo_half, lo_half, lo_half, lo_half, \
-                             lo_half, lo_half, lo_half, lo_half)
+    lo_halfv = _mm_set1_epi16(lo_half)
 #define SETUPHIQV \
-    hi_halfv = _mm_set_epi16(hi_half, hi_half, hi_half, hi_half, \
-                             hi_half, hi_half, hi_half, hi_half)
+    hi_halfv = _mm_set1_epi16(hi_half)
 #define LOQV(_val) _mm_srai_epi16(_mm_add_epi16(_val, lo_halfv), lo_fact)
 #define HIQV(_val) _mm_srai_epi16(_mm_add_epi16(_val, hi_halfv), hi_fact)
 
@@ -160,12 +158,12 @@
         _mm_add_epi16(_x2n, _x2n2), 1)), 1)
 
 static const __m128i g_vec_zerov = { 0, 0 };
-static const __m128i g_vec_128v = { 0x8080808080808080, 0x8080808080808080 };
+static const __m128i g_vec_128v = { 0x0080008000800080, 0x0080008000800080 };
 
 /******************************************************************************/
 static void
-rfx_encode_dwt_shift_rem_vert_lv1_u8(const unsigned char *in_buffer,
-                                     short *out_buffer)
+rfx_encode_dwt_shift_rem_vert_lv1_u8(const uint8 *in_buffer,
+                                     sint16 *out_buffer)
 {
     const uint8 *ic; /* input coefficients */
     sint16 *lo;
@@ -434,7 +432,7 @@ rfx_encode_dwt_shift_rem_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
     hn1 = hn;
     ic30 = x2n = x2n2;
     IC_LL1(x2n1, 31);
-    IC_LL1(x2n1, 32);
+    IC_LL1(x2n2, 32);
     OC_H1(15, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
     OC_L1(15, NOQ(x2n + ((hn1 + hn) >> 1)));
     /* post ex */
@@ -735,8 +733,8 @@ rfx_encode_dwt_shift_rem_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer,
 
 /******************************************************************************/
 int
-rfx_encode_dwt_shift_rem_amd64(const unsigned char *in_buffer,
-                               short *out_buffer, short *tmp_buffer,
+rfx_encode_dwt_shift_rem_amd64(const uint8 *in_buffer,
+                               sint16 *out_buffer, sint16 *tmp_buffer,
                                const char *quants)
 {
     rfx_encode_dwt_shift_rem_vert_lv1_u8(in_buffer, tmp_buffer);
