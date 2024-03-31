@@ -462,6 +462,8 @@ rfxcodec_encode_get_internals(struct rfxcodec_encode_internals *internals)
     internals->rfxencode_dwt_2d = rfx_dwt_2d_encode;
     internals->rfxencode_diff_rlgr1 = rfx_encode_diff_rlgr1;
     internals->rfxencode_diff_rlgr3 = rfx_encode_diff_rlgr3;
+    internals->rfx_encode_diff_count = rfx_encode_diff_count;
+    internals->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem;
 #if defined(RFX_USE_ACCEL_X86)
     internals->rfxencode_dwt_shift_x86_sse2 = rfxcodec_encode_dwt_shift_x86_sse2;
     internals->rfxencode_dwt_shift_x86_sse41 = rfxcodec_encode_dwt_shift_x86_sse41;
@@ -469,6 +471,8 @@ rfxcodec_encode_get_internals(struct rfxcodec_encode_internals *internals)
 #if defined(RFX_USE_ACCEL_AMD64)
     internals->rfxencode_dwt_shift_amd64_sse2 = rfxcodec_encode_dwt_shift_amd64_sse2;
     internals->rfxencode_dwt_shift_amd64_sse41 = rfxcodec_encode_dwt_shift_amd64_sse41;
+    internals->rfx_encode_diff_count_amd64 = rfx_encode_diff_count_amd64;
+    internals->rfx_encode_dwt_shift_rem_amd64 = rfx_encode_dwt_shift_rem_amd64;
 #endif
     return 0;
 }
