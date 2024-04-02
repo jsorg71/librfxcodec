@@ -10,24 +10,26 @@
 #include <emmintrin.h>
 
 #include "funcs_amd64.h"
+#include "rfxcommon.h"
 
 static const __m128i g_vec_zerov = { 0, 0 };
 
 /******************************************************************************/
 int
-rfx_encode_diff_count_amd64(short *diff_buffer,
-                            const short *dwt_buffer,
-                            const short *hist_buffer,
+rfx_encode_diff_count_amd64(sint16 *diff_buffer,
+                            const sint16 *dwt_buffer,
+                            const sint16 *hist_buffer,
                             int *diff_zeros, int *dwt_zeros)
 {
     int index;
     int ldiff_zeros = 0;
     int ldwt_zeros = 0;
-    int mask;
     __m128i dwt_vec;
     __m128i hist_vec;
     __m128i diff_vec;
     __m128i cmp_vec;
+    __m128i dwt_sum_vec = { 0, 0 };
+    __m128i diff_sum_vec = { 0, 0 };
 
     /* diff and count for most of tile */
     for (index = 0; index < 4096 - 88; index += 8)
@@ -38,12 +40,10 @@ rfx_encode_diff_count_amd64(short *diff_buffer,
         diff_vec = _mm_sub_epi16(dwt_vec, hist_vec);
         _mm_store_si128((__m128i *)(diff_buffer + index), diff_vec);
         /* count */
-        cmp_vec = _mm_cmpeq_epi16(diff_vec, g_vec_zerov);
-        mask = _mm_movemask_epi8(cmp_vec);
-        ldiff_zeros += __builtin_popcount(mask) / 2;
         cmp_vec = _mm_cmpeq_epi16(dwt_vec, g_vec_zerov);
-        mask = _mm_movemask_epi8(cmp_vec);
-        ldwt_zeros += __builtin_popcount(mask) / 2;
+        dwt_sum_vec = _mm_sub_epi16(cmp_vec, dwt_sum_vec); /* sub -1 or 0 */
+        cmp_vec = _mm_cmpeq_epi16(diff_vec, g_vec_zerov);
+        diff_sum_vec = _mm_sub_epi16(cmp_vec, diff_sum_vec); /* sub -1 or 0 */
     }
     /* diff for the rest of tile */
     while (index < 4096)
@@ -66,6 +66,22 @@ rfx_encode_diff_count_amd64(short *diff_buffer,
             ldwt_zeros++;
         }
     }
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 0);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 0);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 1);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 1);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 2);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 2);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 3);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 3);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 4);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 4);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 5);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 5);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 6);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 6);
+    ldwt_zeros += _mm_extract_epi16(dwt_sum_vec, 7);
+    ldiff_zeros += _mm_extract_epi16(diff_sum_vec, 7);
     *diff_zeros = ldiff_zeros;
     *dwt_zeros = ldwt_zeros;
     return 0;
