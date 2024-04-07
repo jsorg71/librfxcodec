@@ -91,8 +91,8 @@ typedef int (*rfxencode_dwt_shift_amd64_sse41_proc)(const char *qtable, const un
 
 typedef int (*rfx_encode_diff_count_proc)(short *diff_buffer, const short *dwt_buffer, const short *hist_buffer, int *diff_zeros, int *dwt_zeros);
 typedef int (*rfx_encode_dwt_shift_rem_proc)(const unsigned char *in_buffer, short *out_buffer, short *tmp_buffer, const char *quants);
-typedef int (*rfx_encode_diff_count_amd64_proc)(short *diff_buffer, const short *dwt_buffer, const short *hist_buffer, int *diff_zeros, int *dwt_zeros);
-typedef int (*rfx_encode_dwt_shift_rem_amd64_proc)(const unsigned char *in_buffer, short *out_buffer, short *tmp_buffer, const char *quants);
+typedef int (*rfx_encode_diff_count_sse2_proc)(short *diff_buffer, const short *dwt_buffer, const short *hist_buffer, int *diff_zeros, int *dwt_zeros);
+typedef int (*rfx_encode_dwt_shift_rem_sse2_proc)(const unsigned char *in_buffer, short *out_buffer, short *tmp_buffer, const char *quants);
 
 struct rfxcodec_encode_internals
 {
@@ -109,8 +109,8 @@ struct rfxcodec_encode_internals
     rfxencode_dwt_shift_amd64_sse41_proc rfxencode_dwt_shift_amd64_sse41;
     rfx_encode_diff_count_proc rfx_encode_diff_count;
     rfx_encode_dwt_shift_rem_proc rfx_encode_dwt_shift_rem;
-    rfx_encode_diff_count_amd64_proc rfx_encode_diff_count_amd64;
-    rfx_encode_dwt_shift_rem_amd64_proc rfx_encode_dwt_shift_rem_amd64;
+    rfx_encode_diff_count_sse2_proc rfx_encode_diff_count_sse2;
+    rfx_encode_dwt_shift_rem_sse2_proc rfx_encode_dwt_shift_rem_sse2;
 };
 
 int

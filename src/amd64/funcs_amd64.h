@@ -41,15 +41,6 @@ rfxcodec_encode_dwt_shift_amd64_sse41(const char *qtable,
                                       const unsigned char *data,
                                       short *dwt_buffer1,
                                       short *dwt_buffer);
-int
-rfx_encode_diff_count_amd64(short *diff_buffer,
-                            const short *dwt_buffer,
-                            const short *hist_buffer,
-                            int *diff_zeros, int *dwt_zeros);
-int
-rfx_encode_dwt_shift_rem_amd64(const unsigned char *in_buffer,
-                               short *out_buffer, short *tmp_buffer,
-                               const char *quants);
 
 #ifdef __cplusplus
 }

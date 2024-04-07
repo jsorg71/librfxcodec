@@ -45,10 +45,14 @@
 
 #ifdef RFX_USE_ACCEL_X86
 #include "x86/funcs_x86.h"
+#include "rfxencode_diff_count_sse2.h"
+#include "rfxencode_dwt_shift_rem_sse2.h"
 #endif
 
 #ifdef RFX_USE_ACCEL_AMD64
 #include "amd64/funcs_amd64.h"
+#include "rfxencode_diff_count_sse2.h"
+#include "rfxencode_dwt_shift_rem_sse2.h"
 #endif
 
 static void
@@ -223,10 +227,16 @@ rfxcodec_encode_create_ex(int width, int height, int format, int flags,
     if (flags & RFX_FLAGS_PRO1)
     {
         enc->pro_ver = 1;
-#if defined(RFX_USE_ACCEL_AMD64)
-        enc->rfx_encode_diff_count = rfx_encode_diff_count_amd64;
-        enc->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem_amd64;
+        if (flags & RFX_FLAGS_NOACCEL)
+        {
+        }
+        else if (enc->got_sse2)
+        {
+#if defined(RFX_USE_ACCEL_X86) || defined(RFX_USE_ACCEL_AMD64)
+            enc->rfx_encode_diff_count = rfx_encode_diff_count_sse2;
+            enc->rfx_encode_dwt_shift_rem = rfx_encode_dwt_shift_rem_sse2;
 #endif
+        }
     }
     else if (flags & RFX_FLAGS_NOACCEL)
     {
@@ -467,12 +477,14 @@ rfxcodec_encode_get_internals(struct rfxcodec_encode_internals *internals)
 #if defined(RFX_USE_ACCEL_X86)
     internals->rfxencode_dwt_shift_x86_sse2 = rfxcodec_encode_dwt_shift_x86_sse2;
     internals->rfxencode_dwt_shift_x86_sse41 = rfxcodec_encode_dwt_shift_x86_sse41;
+    internals->rfx_encode_diff_count_sse2 = rfx_encode_diff_count_sse2;
+    internals->rfx_encode_dwt_shift_rem_sse2 = rfx_encode_dwt_shift_rem_sse2;
 #endif
 #if defined(RFX_USE_ACCEL_AMD64)
     internals->rfxencode_dwt_shift_amd64_sse2 = rfxcodec_encode_dwt_shift_amd64_sse2;
     internals->rfxencode_dwt_shift_amd64_sse41 = rfxcodec_encode_dwt_shift_amd64_sse41;
-    internals->rfx_encode_diff_count_amd64 = rfx_encode_diff_count_amd64;
-    internals->rfx_encode_dwt_shift_rem_amd64 = rfx_encode_dwt_shift_rem_amd64;
+    internals->rfx_encode_diff_count_sse2 = rfx_encode_diff_count_sse2;
+    internals->rfx_encode_dwt_shift_rem_sse2 = rfx_encode_dwt_shift_rem_sse2;
 #endif
     return 0;
 }
