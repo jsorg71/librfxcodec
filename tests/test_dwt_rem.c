@@ -41,6 +41,40 @@ main(int argc, char **argv)
     if (error == 0)
     {
 #if 0
+        read(fd, tmp_buffer2, 4096 * 2);
+        for (index = 0; index < 1024 * 1024; index++)
+        {
+            int jndex;
+            int kndex;
+            short *dst;
+            short *src;
+            for (kndex = 0; kndex < 64; kndex++)
+            {
+                src = tmp_buffer2 + kndex * 64;
+                dst = tmp_buffer1 + kndex;
+                for (jndex = 0; jndex < 64; jndex += 8)
+                {
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                    *dst = *src; src++; dst += 64;
+                }
+            }
+        }
+        if (memcmp(tmp_buffer1, tmp_buffer2, 4096 * 2) == 0)
+        {
+            printf("match\n");
+        }
+        else
+        {
+            printf("no match\n");
+        }
+#endif
+#if 0
         read(fd, dwt_buffer, 4096 * 2);
         read(fd, hist_buffer, 4096 * 2);
         internals.rfx_encode_diff_count(diff_buffer1, dwt_buffer, hist_buffer, &diff_zeros1, &dwt_zeros1);
@@ -54,28 +88,32 @@ main(int argc, char **argv)
             printf("no match\n");
         }
 #endif
-#if 1
+#if 0
         read(fd, in_buffer, 4096);
         internals.rfx_encode_dwt_shift_rem(in_buffer, out_buffer1, tmp_buffer1, quans);
         //internals.rfx_encode_dwt_shift_rem(in_buffer, out_buffer2, tmp_buffer2, quans);
-        internals.rfx_encode_dwt_shift_rem_amd64(in_buffer, out_buffer2, tmp_buffer2, quans);
+        internals.rfx_encode_dwt_shift_rem_sse2(in_buffer, out_buffer2, tmp_buffer2, quans);
         if (memcmp(out_buffer1, out_buffer2, 4096 * 2) == 0)
         //if (memcmp(tmp_buffer1, tmp_buffer2, 4096 * 2) == 0)
         {
-            //printf("match\n");
+            printf("match\n");
         }
         else
         {
             printf("no match\n");
         }
 #endif
-#if 0
+#if 1
         for (index = 0; index < 1024 * 1024; index++)
         {
-            internals.rfx_encode_diff_count_amd64(diff_buffer1, dwt_buffer, hist_buffer, &diff_zeros1, &dwt_zeros1);
+            //internals.rfx_encode_diff_count_amd64(diff_buffer1, dwt_buffer, hist_buffer, &diff_zeros1, &dwt_zeros1);
             //internals.rfx_encode_diff_count(diff_buffer1, dwt_buffer, hist_buffer, &diff_zeros1, &dwt_zeros1);
-            //internals.rfx_encode_dwt_shift_rem_amd64(in_buffer, out_buffer1, tmp_buffer1, quans);
-            //internals.rfx_encode_dwt_shift_rem(in_buffer, out_buffer, tmp_buffer, quans);
+            internals.rfx_encode_dwt_shift_rem_sse2(in_buffer, out_buffer1, tmp_buffer1, quans);
+            //internals.rfx_encode_dwt_shift_rem(in_buffer, out_buffer1, tmp_buffer1, quans);
+            //printf("hi %p\n", internals.rfxencode_dwt_shift_amd64_sse2);
+            //internals.rfxencode_dwt_shift_amd64_sse2(quans, (char*)((int)in_buffer & ~31),
+//                                                    (short*)(((int)out_buffer1) & ~31),
+  //                                                  (short*)(((int)tmp_buffer1) & ~31));
         }
 #endif
     }
