@@ -716,6 +716,25 @@ do { \
         _coef1[_loop] = _coef2[_loop] - _coef3[_loop]; } \
 } while (0)
 
+
+/******************************************************************************/
+int
+rfx_encode_diff_count(sint16 *diff_buffer,
+                      const sint16 *dwt_buffer,
+                      const sint16 *hist_buffer,
+                      int *diff_zeros, int *dwt_zeros)
+{
+    int index;
+    int ldiff_zeros;
+    int ldwt_zeros;
+
+    COEF_DIFF_COUNT(diff_buffer, dwt_buffer, hist_buffer, index,
+                    ldiff_zeros, ldwt_zeros);
+    *diff_zeros = ldiff_zeros;
+    *dwt_zeros = ldwt_zeros;
+    return 0;
+}
+
 /******************************************************************************/
 /* return tiles written or -1 on error */
 static int
@@ -846,18 +865,18 @@ rfx_pro_compose_message_region(struct rfxencode *enc, STREAM *s,
             }
             enc->rbs[xIdx][yIdx] = rb;
         }
-        rfx_rem_dwt_shift_encode(y_buffer, enc->dwt_buffer1,
-                                 enc->dwt_buffer, y_quants);
-        rfx_rem_dwt_shift_encode(u_buffer, enc->dwt_buffer2,
-                                 enc->dwt_buffer, u_quants);
-        rfx_rem_dwt_shift_encode(v_buffer, enc->dwt_buffer3,
-                                 enc->dwt_buffer, v_quants);
-        COEF_DIFF_COUNT(enc->dwt_buffer4, enc->dwt_buffer1, rb->y,
-                        jndex, dt_y_zeros, ot_y_zeros);
-        COEF_DIFF_COUNT(enc->dwt_buffer5, enc->dwt_buffer2, rb->u,
-                        jndex, dt_u_zeros, ot_u_zeros);
-        COEF_DIFF_COUNT(enc->dwt_buffer6, enc->dwt_buffer3, rb->v,
-                        jndex, dt_v_zeros, ot_v_zeros);
+        enc->rfx_encode_dwt_shift_rem(y_buffer, enc->dwt_buffer1,
+                                      enc->dwt_buffer, y_quants);
+        enc->rfx_encode_dwt_shift_rem(u_buffer, enc->dwt_buffer2,
+                                      enc->dwt_buffer, u_quants);
+        enc->rfx_encode_dwt_shift_rem(v_buffer, enc->dwt_buffer3,
+                                      enc->dwt_buffer, v_quants);
+        enc->rfx_encode_diff_count(enc->dwt_buffer4, enc->dwt_buffer1, rb->y,
+                                   &dt_y_zeros, &ot_y_zeros);
+        enc->rfx_encode_diff_count(enc->dwt_buffer5, enc->dwt_buffer2, rb->u,
+                                   &dt_u_zeros, &ot_u_zeros);
+        enc->rfx_encode_diff_count(enc->dwt_buffer6, enc->dwt_buffer3, rb->v,
+                                   &dt_v_zeros, &ot_v_zeros);
         if (ot_y_zeros + ot_u_zeros + ot_v_zeros <
             dt_y_zeros + dt_u_zeros + dt_v_zeros)
         {

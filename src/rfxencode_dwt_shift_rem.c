@@ -1,7 +1,7 @@
 /**
  * RemoteFX Codec Library
  *
- * Copyright 2020 Jay Sorg <jay.sorg@gmail.com>
+ * Copyright 2020-2024 Jay Sorg <jay.sorg@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,32 +28,13 @@
 #include <string.h>
 
 #include "rfxcommon.h"
-#include "rfxencode_dwt_rem.h"
 #include "rfxencode_dwt_shift_rem.h"
-
-#define ICL1(_offset) (ic[(_offset) * 64] - 128) << DWT_FACTOR
-#define ICL2(_offset) ic[(_offset) * 33]
-#define ICL3(_offset) ic[(_offset) * 17]
-
-#define LOL1(_offset) lo[(_offset) * 64]
-#define HIL1(_offset) hi[(_offset) * 64]
-#define LOL2(_offset) lo[(_offset) * 33]
-#define HIL2(_offset) hi[(_offset) * 33]
-#define LOL3(_offset) lo[(_offset) * 17]
-#define HIL3(_offset) hi[(_offset) * 17]
-
-#define SETUPLOQ(_index, _shift) do { \
-    lo_fact = (((quants[_index] >> (_shift)) & 0xf) - 6) + DWT_FACTOR; \
-    lo_half = 1 << (lo_fact - 1); } while (0)
-#define SETUPHIQ(_index, _shift) do { \
-    hi_fact = (((quants[_index] >> (_shift)) & 0xf) - 6) + DWT_FACTOR; \
-    hi_half = 1 << (hi_fact - 1); } while (0)
-#define LOQ(_val) ((_val) + lo_half) >> lo_fact
-#define HIQ(_val) ((_val) + hi_half) >> hi_fact
+#include "rfxencode_dwt_shift_rem_common.h"
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
+rfx_encode_dwt_shift_rem_vert_lv1_u8(const uint8 *in_buffer,
+                                     sint16 *out_buffer)
 {
     const uint8 *ic; /* input coefficients */
     sint16 *lo;
@@ -69,48 +50,44 @@ rfx_rem_dwt_shift_encode_vert_lv1(const uint8 *in_buffer, sint16 *out_buffer)
 
     for (y = 0; y < 64; y++)
     {
-
         /* setup */
-        ic = in_buffer + y;
-        lo = out_buffer + y;
-        hi = lo + 64 * 33;
-
+        ic = SETUP_IC_LL0(y);
+        lo = SETUP_OC_L0(y);
+        hi = SETUP_OC_H0(y);
         /* pre */
-        x2n = ICL1(0);
-        x2n1 = ICL1(1);
-        x2n2 = ICL1(2);
-        HIL1(0) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL1(0) = x2n + hn; /* mirror */
-
+        IC_LL0_U8(x2n, 0);
+        IC_LL0_U8(x2n1, 1);
+        IC_LL0_U8(x2n2, 2);
+        OC_H0(0, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_L0(0, NOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 31; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ICL1(2 * n + 1);
-            x2n2 = ICL1(2 * n + 2);
-            HIL1(n) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            LOL1(n) = x2n + ((hn1 + hn) >> 1);
+            IC_LL0_U8(x2n1, 2 * n + 1);
+            IC_LL0_U8(x2n2, 2 * n + 2);
+            OC_H0(n, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_L0(n, NOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic62 = x2n = x2n2;
-        x2n1 = ICL1(63);
+        IC_LL0_U8(x2n1, 63);
         x2n2 = 2 * x2n1 - x2n; /* ic[64] = 2 * ic[63] - ic[62] */
-        LOL1(31) = x2n + (hn1 >> 1);
-
+        OC_L0(31, NOQ(x2n + (hn1 >> 1)));
+        /* post ex */
         x2n = x2n2;
         /* x2n1 already set, mirror 65 -> 63 */
         x2n2 = ic62;      /* mirror 66 -> 62 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL1(32) = x2n + (hn >> 1);
+        OC_L0(32, NOQ(x2n + (hn >> 1)));
     }
 }
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
+rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
                                   const char *quants)
 {
     const sint16 *ic; /* input coefficients */
@@ -129,93 +106,85 @@ rfx_rem_dwt_shift_encode_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
     int lo_half;
     int hi_half;
 
+    /* LL1 no Q */
     SETUPHIQ(4, 0); /* HL1 */
     for (y = 0; y < 33; y++) /* lo */
     {
         /* setup */
-        ic = in_buffer + 64 * y;
-        lo = out_buffer + 31 * 33 + 33 * 31 + 31 * 31 + 33 * y; /* LL1 */
-        hi = out_buffer + 31 * y; /* HL1 */
-
+        ic = SETUP_IC_L0(y);
+        lo = SETUP_OC_LL1(y);
+        hi = SETUP_OC_HL1(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = x2n + hn; /* mirror */
-
+        IC_L0(x2n, 0);
+        IC_L0(x2n1, 1);
+        IC_L0(x2n2, 2);
+        OC_HL1(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LL1(0, NOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 31; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            IC_L0(x2n1, 2 * n + 1);
+            IC_L0(x2n2, 2 * n + 2);
+            OC_HL1(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LL1(n, NOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic62 = x2n = x2n2;
-        x2n1 = ic[63];
+        IC_L0(x2n1, 63);
         x2n2 = 2 * x2n1 - x2n; /* ic[64] = 2 * ic[63] - ic[62] */
-        lo[31] = x2n + (hn1 >> 1);
-
+        OC_LL1(31, NOQ(x2n + (hn1 >> 1)));
+        /* post ex */
         x2n = x2n2;
         /* x2n1 already set, mirror 65 -> 63 */
         x2n2 = ic62;      /* mirror 66 -> 62 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[32] = x2n + (hn >> 1);
-
+        OC_LL1(32, NOQ(x2n + (hn >> 1)));
     }
-
     SETUPLOQ(3, 4); /* LH1 */
     SETUPHIQ(4, 4); /* HH1 */
     for (y = 0; y < 31; y++) /* hi */
     {
-
         /* setup */
-        ic = in_buffer + 64 * (33 + y);
-        lo = out_buffer + 31 * 33 + 33 * y; /* LH1 */
-        hi = out_buffer + 31 * 33 + 33 * 31 + 31 * y; /* HH1 */
-
+        ic = SETUP_IC_H0(y);
+        lo = SETUP_OC_LH1(y);
+        hi = SETUP_OC_HH1(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = LOQ(x2n + hn);
-
+        IC_H0(x2n, 0);
+        IC_H0(x2n1, 1);
+        IC_H0(x2n2, 2);
+        OC_HH1(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LH1(0, LOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 31; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
+            IC_H0(x2n1, 2 * n + 1);
+            IC_H0(x2n2, 2 * n + 2);
+            OC_HH1(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LH1(n, LOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic62 = x2n = x2n2;
-        x2n1 = ic[63];
+        IC_H0(x2n1, 63);
         x2n2 = 2 * x2n1 - x2n; /* ic[64] = 2 * ic[63] - ic[62] */
-        lo[31] = LOQ(x2n + (hn1 >> 1));
-
+        OC_LH1(31, LOQ(x2n + (hn1 >> 1)));
+        /* post ex */
         x2n = x2n2;
         /* x2n1 already set, mirror 65 -> 63 */
         x2n2 = ic62;      /* mirror 66 -> 62 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[32] = LOQ(x2n + (hn >> 1));
+        OC_LH1(32, LOQ(x2n + (hn >> 1)));
     }
 }
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_encode_dwt_shift_rem_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -231,51 +200,46 @@ rfx_rem_dwt_shift_encode_vert_lv2(const sint16 *in_buffer, sint16 *out_buffer)
 
     for (y = 0; y < 33; y++)
     {
-
         /* setup */
-        ic = in_buffer + y;
-        lo = out_buffer + y;
-        hi = lo + 33 * 17;
-
+        ic = SETUP_IC_LL1(y);
+        lo = SETUP_OC_L1(y);
+        hi = SETUP_OC_H1(y);
         /* pre */
-        x2n = ICL2(0);
-        x2n1 = ICL2(1);
-        x2n2 = ICL2(2);
-        HIL2(0) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL2(0) = x2n + hn; /* mirror */
-
+        IC_LL1(x2n, 0);
+        IC_LL1(x2n1, 1);
+        IC_LL1(x2n2, 2);
+        OC_H1(0, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_L1(0, NOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 15; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ICL2(2 * n + 1);
-            x2n2 = ICL2(2 * n + 2);
-            HIL2(n) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            LOL2(n) = x2n + ((hn1 + hn) >> 1);
+            IC_LL1(x2n1, 2 * n + 1);
+            IC_LL1(x2n2, 2 * n + 2);
+            OC_H1(n, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_L1(n, NOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic30 = x2n = x2n2;
-        x2n1 = ICL2(31);
-        x2n2 = ICL2(32);
-        HIL2(15) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL2(15) = x2n + ((hn1 + hn) >> 1);
-
+        IC_LL1(x2n1, 31);
+        IC_LL1(x2n2, 32);
+        OC_H1(15, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_L1(15, NOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 33 -> 31 */
         x2n2 = ic30;      /* mirror 34 -> 30 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL2(16) = x2n + ((hn1 + hn) >> 1);
-
+        OC_L1(16, NOQ(x2n + ((hn1 + hn) >> 1)));
     }
 }
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
+rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
                                   const char *quants)
 {
     const sint16 *ic; /* input coefficients */
@@ -294,100 +258,89 @@ rfx_rem_dwt_shift_encode_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
     int lo_half;
     int hi_half;
 
+    /* LL2 no Q */
     SETUPHIQ(2, 4); /* HL2 */
     for (y = 0; y < 17; y++) /* lo */
     {
-
         /* setup */
-        ic = in_buffer + 33 * y;
-        lo = out_buffer + 16 * 17 + 17 * 16 + 16 * 16 + 17 * y; /* LL2 */
-        hi = out_buffer + 16 * y; /* HL2 */
-
+        ic = SETUP_IC_L1(y);
+        lo = SETUP_OC_LL2(y);
+        hi = SETUP_OC_HL2(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = x2n + hn;
-
+        IC_L1(x2n, 0);
+        IC_L1(x2n1, 1);
+        IC_L1(x2n2, 2);
+        OC_HL2(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LL2(0, NOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 15; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = x2n + ((hn1 + hn) >> 1);
+            IC_L1(x2n1, 2 * n + 1);
+            IC_L1(x2n2, 2 * n + 2);
+            OC_HL2(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LL2(n, NOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic30 = x2n = x2n2;
-        x2n1 = ic[31];
-        x2n2 = ic[32];
-        hi[15] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[15] = x2n + ((hn1 + hn) >> 1);
-
+        IC_L1(x2n1, 31);
+        IC_L1(x2n2, 32);
+        OC_HL2(15, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LL2(15, NOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 33 -> 31 */
         x2n2 = ic30;      /* mirror 34 -> 30 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[16] = x2n + ((hn1 + hn) >> 1);
-
+        OC_LL2(16, NOQ(x2n + ((hn1 + hn) >> 1)));
     }
-
-    SETUPHIQ(3, 0); /* HH2 */
     SETUPLOQ(2, 0); /* LH2 */
+    SETUPHIQ(3, 0); /* HH2 */
     for (y = 0; y < 16; y++) /* hi */
     {
-
         /* setup */
-        ic = in_buffer + 33 * (17 + y);
-        lo = out_buffer + 16 * 17 + 17 * y; /* LH2 */
-        hi = out_buffer + 16 * 17 + 17 * 16 + 16 * y; /* HH2 */
-
+        ic = SETUP_IC_H1(y);
+        lo = SETUP_OC_LH2(y);
+        hi = SETUP_OC_HH2(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = LOQ(x2n + hn);
-
+        IC_H1(x2n, 0);
+        IC_H1(x2n1, 1);
+        IC_H1(x2n2, 2);
+        OC_HH2(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LH2(0, LOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 15; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
+            IC_H1(x2n1, 2 * n + 1);
+            IC_H1(x2n2, 2 * n + 2);
+            OC_HH2(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LH2(n, LOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic30 = x2n = x2n2;
-        x2n1 = ic[31];
-        x2n2 = ic[32];
-        hi[15] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[15] = LOQ(x2n + ((hn1 + hn) >> 1));
-
+        IC_H1(x2n1, 31);
+        IC_H1(x2n2, 32);
+        OC_HH2(15, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LH2(15, LOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 33 -> 31 */
         x2n2 = ic30;      /* mirror 34 -> 30 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[16] = LOQ(x2n + ((hn1 + hn) >> 1));
-
+        OC_LH2(16, LOQ(x2n + ((hn1 + hn) >> 1)));
     }
-
 }
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
+rfx_encode_dwt_shift_rem_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
 {
     const sint16 *ic; /* input coefficients */
     sint16 *lo;
@@ -404,49 +357,45 @@ rfx_rem_dwt_shift_encode_vert_lv3(const sint16 *in_buffer, sint16 *out_buffer)
     for (y = 0; y < 17; y++)
     {
         /* setup */
-        ic = in_buffer + y;
-        lo = out_buffer + y;
-        hi = lo + 17 * 9;
-
+        ic = SETUP_IC_LL2(y);
+        lo = SETUP_OC_L2(y);
+        hi = SETUP_OC_H2(y);
         /* pre */
-        x2n = ICL3(0);
-        x2n1 = ICL3(1);
-        x2n2 = ICL3(2);
-        HIL3(0) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL3(0) = x2n + hn; /* mirror */
-
+        IC_LL2(x2n, 0);
+        IC_LL2(x2n1, 1);
+        IC_LL2(x2n2, 2);
+        OC_H2(0, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_L2(0, NOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 7; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ICL3(2 * n + 1);
-            x2n2 = ICL3(2 * n + 2);
-            HIL3(n) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-            LOL3(n) = x2n + ((hn1 + hn) >> 1);
+            IC_LL2(x2n1, 2 * n + 1);
+            IC_LL2(x2n2, 2 * n + 2);
+            OC_H2(n, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_L2(n, NOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic14 = x2n = x2n2;
-        x2n1 = ICL3(15);
-        x2n2 = ICL3(16);
-        HIL3(7) = hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL3(7) = x2n + ((hn1 + hn) >> 1);
-
+        IC_LL2(x2n1, 15);
+        IC_LL2(x2n2, 16);
+        OC_H2(7, NOQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_L2(7, NOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 17 -> 15 */
         x2n2 = ic14;      /* mirror 18 -> 14 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        LOL3(8) = x2n + ((hn1 + hn) >> 1);
-
+        OC_L2(8, NOQ(x2n + ((hn1 + hn) >> 1)));
     }
 }
 
 /******************************************************************************/
 static void
-rfx_rem_dwt_shift_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer,
+rfx_encode_dwt_shift_rem_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer,
                                   const char *quants)
 {
     const sint16 *ic; /* input coefficients */
@@ -465,105 +414,96 @@ rfx_rem_dwt_shift_encode_horz_lv3(const sint16 *in_buffer, sint16 *out_buffer,
     int lo_half;
     int hi_half;
 
-    SETUPHIQ(1, 0); /* HL3 */
     SETUPLOQ(0, 0); /* LL3 */
+    SETUPHIQ(1, 0); /* HL3 */
     for (y = 0; y < 9; y++) /* lo */
     {
-
         /* setup */
-        ic = in_buffer + 17 * y;
-        lo = out_buffer + 8 * 9 + 9 * 8 + 8 * 8 + 9 * y; /* LL3 */
-        hi = out_buffer + 8 * y; /* HL3 */
-
+        ic = SETUP_IC_L2(y);
+        lo = SETUP_OC_LL3(y);
+        hi = SETUP_OC_HL3(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = LOQ(x2n + hn); /* mirror */
-
+        IC_L2(x2n, 0);
+        IC_L2(x2n1, 1);
+        IC_L2(x2n2, 2);
+        OC_HL3(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LL3(0, LOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 7; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
+            IC_L2(x2n1, 2 * n + 1);
+            IC_L2(x2n2, 2 * n + 2);
+            OC_HL3(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LL3(n, LOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic14 = x2n = x2n2;
-        x2n1 = ic[15];
-        x2n2 = ic[16];
-        hi[7] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[7] = LOQ(x2n + ((hn1 + hn) >> 1));
-
+        IC_L2(x2n1, 15);
+        IC_L2(x2n2, 16);
+        OC_HL3(7, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LL3(7, LOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 17 -> 15 */
         x2n2 = ic14;      /* mirror 18 -> 14 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[8] = LOQ(x2n + ((hn1 + hn) >> 1));
-
+        OC_LL3(8, LOQ(x2n + ((hn1 + hn) >> 1)));
     }
-
-    SETUPHIQ(1, 4); /* HH3 */
     SETUPLOQ(0, 4); /* LH3 */
+    SETUPHIQ(1, 4); /* HH3 */
     for (y = 0; y < 8; y++) /* hi */
     {
         /* setup */
-        ic = in_buffer + 17 * (9 + y);
-        lo = out_buffer + 8 * 9 + 9 * y; /* LH3 */
-        hi = out_buffer + 8 * 9 + 9 * 8 + 8 * y; /* HH3 */
-
+        ic = SETUP_IC_H2(y);
+        lo = SETUP_OC_LH3(y);
+        hi = SETUP_OC_HH3(y);
         /* pre */
-        x2n = ic[0];
-        x2n1 = ic[1];
-        x2n2 = ic[2];
-        hi[0] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[0] = LOQ(x2n + hn); /* mirror */
-
+        IC_H2(x2n, 0);
+        IC_H2(x2n1, 1);
+        IC_H2(x2n2, 2);
+        OC_HH3(0, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LH3(0, LOQ(x2n + hn)); /* mirror */
         /* loop */
         for (n = 1; n < 7; n++)
         {
             hn1 = hn;
             x2n = x2n2;
-            x2n1 = ic[2 * n + 1];
-            x2n2 = ic[2 * n + 2];
-            hi[n] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-            lo[n] = LOQ(x2n + ((hn1 + hn) >> 1));
+            IC_H2(x2n1, 2 * n + 1);
+            IC_H2(x2n2, 2 * n + 2);
+            OC_HH3(n, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+            OC_LH3(n, LOQ(x2n + ((hn1 + hn) >> 1)));
         }
-
         /* post */
         hn1 = hn;
         ic14 = x2n = x2n2;
-        x2n1 = ic[15];
-        x2n2 = ic[16];
-        hi[7] = HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1);
-        lo[7] = LOQ(x2n + ((hn1 + hn) >> 1));
-
+        IC_H2(x2n1, 15);
+        IC_H2(x2n2, 16);
+        OC_HH3(7, HIQ(hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1));
+        OC_LH3(7, LOQ(x2n + ((hn1 + hn) >> 1)));
+        /* post ex */
         hn1 = hn;
         x2n = x2n2;
         /* x2n1 already set, mirror 17 -> 15 */
         x2n2 = ic14;      /* mirror 18 -> 14 */
         hn = (x2n1 - ((x2n + x2n2) >> 1)) >> 1;
-        lo[8] = LOQ(x2n + ((hn1 + hn) >> 1));
+        OC_LH3(8, LOQ(x2n + ((hn1 + hn) >> 1)));
     }
 }
 
 /******************************************************************************/
 int
-rfx_rem_dwt_shift_encode(const uint8 *in_buffer, sint16 *out_buffer,
+rfx_encode_dwt_shift_rem(const uint8 *in_buffer, sint16 *out_buffer,
                          sint16 *tmp_buffer, const char *quants)
 {
-    rfx_rem_dwt_shift_encode_vert_lv1(in_buffer, tmp_buffer);
-    rfx_rem_dwt_shift_encode_horz_lv1(tmp_buffer, out_buffer, quants);
-    rfx_rem_dwt_shift_encode_vert_lv2(out_buffer + 3007, tmp_buffer);
-    rfx_rem_dwt_shift_encode_horz_lv2(tmp_buffer, out_buffer + 3007, quants);
-    rfx_rem_dwt_shift_encode_vert_lv3(out_buffer + 3807, tmp_buffer);
-    rfx_rem_dwt_shift_encode_horz_lv3(tmp_buffer, out_buffer + 3807, quants);
+    rfx_encode_dwt_shift_rem_vert_lv1_u8(in_buffer, tmp_buffer);
+    rfx_encode_dwt_shift_rem_horz_lv1(tmp_buffer, out_buffer, quants);
+    rfx_encode_dwt_shift_rem_vert_lv2(out_buffer + 3007, tmp_buffer);
+    rfx_encode_dwt_shift_rem_horz_lv2(tmp_buffer, out_buffer + 3007, quants);
+    rfx_encode_dwt_shift_rem_vert_lv3(out_buffer + 3807, tmp_buffer);
+    rfx_encode_dwt_shift_rem_horz_lv3(tmp_buffer, out_buffer + 3807, quants);
     return 0;
 }

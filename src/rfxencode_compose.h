@@ -32,6 +32,11 @@ rfx_compose_message_data(struct rfxencode *enc, STREAM *s,
                          const char *quants, int num_quants, int flags);
 
 int
+rfx_encode_diff_count(sint16 *diff_buffer,
+                      const sint16 *dwt_buffer,
+                      const sint16 *hist_buffer,
+                      int *diff_zeros, int *dwt_zeros);
+int
 rfx_pro_compose_message_header(struct rfxencode *enc, STREAM *s);
 int
 rfx_pro_compose_message_data(struct rfxencode *enc, STREAM *s,

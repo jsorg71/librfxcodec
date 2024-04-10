@@ -32,6 +32,14 @@ typedef int (*rfx_encode_argb_to_yuva_proc)(struct rfxencode *enc,
 typedef int (*rfx_encode_proc)(struct rfxencode *enc, const char *qtable,
                                const uint8 *data,
                                uint8 *buffer, int buffer_size, int *size);
+typedef int
+(*rfx_encode_dwt_shift_rem_proc)(const uint8 *in_buffer, sint16 *out_buffer,
+                                 sint16 *tmp_buffer, const char *quants);
+typedef int
+(*rfx_encode_diff_count_proc)(sint16 *diff_buffer,
+                              const sint16 *dwt_buffer,
+                              const sint16 *hist_buffer,
+                              int *diff_zeros, int *dwt_zeros);
 
 struct rfx_rb
 {
@@ -82,6 +90,8 @@ struct rfxencode
     rfx_encode_rgb_to_yuv_proc rfx_encode_rgb_to_yuv;
     rfx_encode_argb_to_yuva_proc rfx_encode_argb_to_yuva;
     rfx_encode_proc rfx_rem_encode;
+    rfx_encode_dwt_shift_rem_proc rfx_encode_dwt_shift_rem;
+    rfx_encode_diff_count_proc  rfx_encode_diff_count;
 
     struct rfx_rb * rbs[RFX_MAX_RB_X][RFX_MAX_RB_Y];
 

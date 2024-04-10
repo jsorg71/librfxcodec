@@ -1,7 +1,7 @@
 /**
- * RFX codec encoder
+ * RemoteFX Codec Library
  *
- * Copyright 2020-2024 Jay Sorg <jay.sorg@gmail.com>
+ * Copyright 2024 Jay Sorg <jay.sorg@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
  * limitations under the License.
  */
 
-#ifndef __RFXENCODE_DWT_SHIFT_REM_H
-#define __RFXENCODE_DWT_SHIFT_REM_H
+#ifndef __RFXENCODE_DWT_SHIFT_REM_SSE2_H
+#define __RFXENCODE_DWT_SHIFT_REM_SSE2_H
 
 int
-rfx_encode_dwt_shift_rem(const uint8 *in_buffer, sint16 *out_buffer,
-                         sint16 *tmp_buffer, const char *quants);
+rfx_encode_dwt_shift_rem_sse2(const uint8 *in_buffer, sint16 *out_buffer,
+                              sint16 *tmp_buffer, const char *quants);
 
 #endif
