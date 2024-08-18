@@ -45,18 +45,30 @@
 #define OC_H0V(_offset, _val) \
     _mm_storeu_si128((__m128i *)(hi + (_offset) * 64), _val)
 /*              L0 -> LL1, HL1 */
-#define IC_L0V(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+#define IC_L0V_PRE(_x2nv, _x2n1v, _x2n2v, _offset) do { \
     v1 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset))); \
     v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
+    v3 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 16)); \
     _x2nv = _mm_packs_epi32(_mm_srai_epi32(_mm_slli_epi32(v1, 16), 16), \
                             _mm_srai_epi32(_mm_slli_epi32(v2, 16), 16)); \
     _x2n1v = _mm_packs_epi32(_mm_srai_epi32(v1, 16), \
                              _mm_srai_epi32(v2, 16)); \
-    _x2n2v = _mm_insert_epi16(_mm_srli_si128(_x2nv, 2), \
-                              ic[(_offset) * 2 + 16], 7);  \
+    _x2n2v = _mm_or_si128(_mm_srli_si128(_x2nv, 2), \
+                          _mm_slli_si128(v3, 14));  \
+} while (0)
+#define IC_L0V_LOOP(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = v3; \
+    v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
+    v3 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 16)); \
+    _x2nv = _mm_packs_epi32(_mm_srai_epi32(_mm_slli_epi32(v1, 16), 16), \
+                            _mm_srai_epi32(_mm_slli_epi32(v2, 16), 16)); \
+    _x2n1v = _mm_packs_epi32(_mm_srai_epi32(v1, 16), \
+                             _mm_srai_epi32(v2, 16)); \
+    _x2n2v = _mm_or_si128(_mm_srli_si128(_x2nv, 2), \
+                          _mm_slli_si128(v3, 14));  \
 } while (0)
 #define IC_L0V_POST(_x2nv, _x2n1v, _x2n2v, _offset) do { \
-    v1 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset))); \
+    v1 = v3; \
     v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
     _x2nv = _mm_packs_epi32(_mm_srai_epi32(_mm_slli_epi32(v1, 16), 16), \
                             _mm_srai_epi32(_mm_slli_epi32(v2, 16), 16)); \
@@ -72,7 +84,6 @@
     _mm_storeu_si128((__m128i *)(hi + (_offset)), _val)
 /*              H0 -> LH1, HH1 */
 #define IC_H0V_PRE IC_L0V_PRE
-#define IC_H0V IC_L0V
 #define IC_H0V_LOOP IC_L0V_LOOP
 #define IC_H0V_POST IC_L0V_POST
 #define OC_LH1V OC_LL1V
@@ -86,11 +97,23 @@
 #define OC_H1V(_offset, _val) \
     _mm_storeu_si128((__m128i *)(hi + (_offset) * 33), _val)
 /*              L1 -> LL2, HL2 */
-#define IC_L1V IC_L0V
+#define IC_L1V_PRE IC_L0V_PRE
+#define IC_L1V_POST(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = v3; \
+    v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
+    _x2nv = _mm_packs_epi32(_mm_srai_epi32(_mm_slli_epi32(v1, 16), 16), \
+                            _mm_srai_epi32(_mm_slli_epi32(v2, 16), 16)); \
+    _x2n1v = _mm_packs_epi32(_mm_srai_epi32(v1, 16), \
+                             _mm_srai_epi32(v2, 16)); \
+    _x2n2v = _mm_insert_epi16(_mm_srli_si128(_x2nv, 2), \
+                              ic[(_offset) * 2 + 16], 7);  \
+} while (0)
+
 #define OC_LL2V OC_LL1V
 #define OC_HL2V OC_HL1V
 /*              H1 -> LH2, HH2 */
-#define IC_H1V IC_L0V
+#define IC_H1V_PRE IC_L0V_PRE
+#define IC_H1V_POST IC_L1V_POST
 #define OC_LH2V OC_LL1V
 #define OC_HH2V OC_HL1V
 
@@ -102,11 +125,20 @@
 #define OC_H2V(_offset, _val) \
     _mm_storeu_si128((__m128i *)(hi + (_offset) * 17), _val)
 /*              L2 -> LL3, HL3 */
-#define IC_L2V IC_L0V
+#define IC_L2V(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset))); \
+    v2 = _mm_loadu_si128((const __m128i *)(ic + 2 * (_offset) + 8)); \
+    _x2nv = _mm_packs_epi32(_mm_srai_epi32(_mm_slli_epi32(v1, 16), 16), \
+                            _mm_srai_epi32(_mm_slli_epi32(v2, 16), 16)); \
+    _x2n1v = _mm_packs_epi32(_mm_srai_epi32(v1, 16), \
+                             _mm_srai_epi32(v2, 16)); \
+    _x2n2v = _mm_insert_epi16(_mm_srli_si128(_x2nv, 2), \
+                              ic[(_offset) * 2 + 16], 7);  \
+} while (0)
 #define OC_LL3V OC_LL1V
 #define OC_HL3V OC_HL1V
 /*              H2 -> LH3, HH3 */
-#define IC_H2V IC_L0V
+#define IC_H2V IC_L2V
 #define OC_LH3V OC_LL1V
 #define OC_HH3V OC_HL1V
 
@@ -197,6 +229,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
     __m128i hi_halfv;
     __m128i v1;
     __m128i v2;
+    __m128i v3;
     __m128i hn_savev;
     sint16 x2n;     /* n[2n]     */
     sint16 hn;      /* H[n]      */
@@ -219,7 +252,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LL1(y);
         hi = SETUP_OC_HL1(y);
         /* pre */
-        IC_L0V(x2nv, x2n1v, x2n2v, 0);
+        IC_L0V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HL1V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = _mm_and_si128(hnv, g_i16_0); /* mirror */
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
@@ -228,7 +261,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         /* loop */
         for (n = 8; n < 24; n += 8)
         {
-            IC_L0V(x2nv, x2n1v, x2n2v, n);
+            IC_L0V_LOOP(x2nv, x2n1v, x2n2v, n);
             OC_HL1V(n, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
             hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
             hn_savev = _mm_srli_si128(hnv, 14);
@@ -257,7 +290,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LH1(y);
         hi = SETUP_OC_HH1(y);
         /* pre */
-        IC_H0V(x2nv, x2n1v, x2n2v, 0);
+        IC_H0V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HH1V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = _mm_and_si128(hnv, g_i16_0); /* mirror */
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
@@ -266,7 +299,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         /* loop */
         for (n = 8; n < 24; n += 8)
         {
-            IC_H0V(x2nv, x2n1v, x2n2v, n);
+            IC_H0V_LOOP(x2nv, x2n1v, x2n2v, n);
             OC_HH1V(n, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
             hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
             hn_savev = _mm_srli_si128(hnv, 14);
@@ -401,6 +434,7 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
     __m128i hi_halfv;
     __m128i v1;
     __m128i v2;
+    __m128i v3;
     __m128i hn_savev;
     sint16 x2n;     /* n[2n]     */
     sint16 x2n1;    /* n[2n + 1] */
@@ -424,14 +458,14 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LL2(y);
         hi = SETUP_OC_HL2(y);
         /* pre */
-        IC_L1V(x2nv, x2n1v, x2n2v, 0);
+        IC_L1V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HL2V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = _mm_and_si128(hnv, g_i16_0); /* mirror */
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
         hn_savev = _mm_srli_si128(hnv, 14);
         OC_LL2V(0, NOQ(LO_MATHV(hnv, hn1v, x2nv)));
         /* loop */
-        IC_L1V(x2nv, x2n1v, x2n2v, 8);
+        IC_L1V_POST(x2nv, x2n1v, x2n2v, 8);
         OC_HL2V(8, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
         hn = _mm_extract_epi16(hnv, 7);
@@ -459,14 +493,14 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LH2(y);
         hi = SETUP_OC_HH2(y);
         /* pre */
-        IC_H1V(x2nv, x2n1v, x2n2v, 0);
+        IC_H1V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HH2V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = _mm_and_si128(hnv, g_i16_0); /* mirror */
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
         hn_savev = _mm_srli_si128(hnv, 14);
         OC_LH2V(0, LOQV(LO_MATHV(hnv, hn1v, x2nv)));
         /* loop */
-        IC_H1V(x2nv, x2n1v, x2n2v, 8);
+        IC_H1V_POST(x2nv, x2n1v, x2n2v, 8);
         OC_HH2V(8, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn1v = _mm_or_si128(_mm_slli_si128(hnv, 2), hn_savev);
         hn = _mm_extract_epi16(hnv, 7);

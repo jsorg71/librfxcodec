@@ -49,9 +49,10 @@
 #define OC_L0V(_offset, _val) vst1q_s16(lo + (_offset) * 64, _val)
 #define OC_H0V(_offset, _val) vst1q_s16(hi + (_offset) * 64, _val)
 /*              L0 -> LL1, HL1 */
-#define IC_L0V(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+#define IC_L0V_PRE(_x2nv, _x2n1v, _x2n2v, _offset) do { \
     v1 = vld1q_s16(ic + 2 * (_offset)); \
     v2 = vld1q_s16(ic + 2 * (_offset) + 8); \
+    v3 = vld1q_s16(ic + 2 * (_offset) + 16); \
     _x2nv  = vcombine_s16( \
         vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v1, 16), 16)), \
         vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v2, 16), 16))); \
@@ -59,10 +60,25 @@
         vqmovn_s32(vshrq_n_s32((int32x4_t)v1, 16)), \
         vqmovn_s32(vshrq_n_s32((int32x4_t)v2, 16))); \
     v1 = vextq_s16(x2nv, g_zero.v16x8, 1); \
-    _x2n2v = vsetq_lane_s16(ic[(_offset) * 2 + 16], v1, 7); \
+    v2 = vextq_s16(g_zero.v16x8, v3, 1); \
+    _x2n2v = vorrq_s16(v1, v2); \
+} while (0)
+#define IC_L0V_LOOP(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = v3; \
+    v2 = vld1q_s16(ic + 2 * (_offset) + 8); \
+    v3 = vld1q_s16(ic + 2 * (_offset) + 16); \
+    _x2nv  = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v1, 16), 16)), \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v2, 16), 16))); \
+    _x2n1v = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v1, 16)), \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v2, 16))); \
+    v1 = vextq_s16(x2nv, g_zero.v16x8, 1); \
+    v2 = vextq_s16(g_zero.v16x8, v3, 1); \
+    _x2n2v = vorrq_s16(v1, v2); \
 } while (0)
 #define IC_L0V_POST(_x2nv, _x2n1v, _x2n2v, _offset) do { \
-    v1 = vld1q_s16(ic + 2 * (_offset)); \
+    v1 = v3; \
     v2 = vld1q_s16(ic + 2 * (_offset) + 8); \
     _x2nv  = vcombine_s16( \
         vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v1, 16), 16)), \
@@ -79,7 +95,6 @@
 #define OC_HL1V(_offset, _val) vst1q_s16(hi + (_offset), _val)
 /*              H0 -> LH1, HH1 */
 #define IC_H0V_PRE IC_L0V_PRE
-#define IC_H0V IC_L0V
 #define IC_H0V_LOOP IC_L0V_LOOP
 #define IC_H0V_POST IC_L0V_POST
 #define OC_LH1V OC_LL1V
@@ -90,11 +105,24 @@
 #define OC_L1V(_offset, _val) vst1q_s16(lo + (_offset) * 33, _val)
 #define OC_H1V(_offset, _val) vst1q_s16(hi + (_offset) * 33, _val)
 /*              L1 -> LL2, HL2 */
-#define IC_L1V IC_L0V
+#define IC_L1V_PRE IC_L0V_PRE
+#define IC_L1V_POST(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = v3; \
+    v2 = vld1q_s16(ic + 2 * (_offset) + 8); \
+    _x2nv  = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v1, 16), 16)), \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v2, 16), 16))); \
+    _x2n1v = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v1, 16)), \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v2, 16))); \
+    v1 = vextq_s16(x2nv, g_zero.v16x8, 1); \
+    _x2n2v = vsetq_lane_s16(ic[(_offset) * 2 + 16], v1, 7); \
+} while (0)
 #define OC_LL2V OC_LL1V
 #define OC_HL2V OC_HL1V
 /*              H1 -> LH2, HH2 */
-#define IC_H1V IC_L0V
+#define IC_H1V_PRE IC_L0V_PRE
+#define IC_H1V_POST IC_L1V_POST
 #define OC_LH2V OC_LL1V
 #define OC_HH2V OC_HL1V
 
@@ -103,11 +131,22 @@
 #define OC_L2V(_offset, _val) vst1q_s16(lo + (_offset) * 17, _val)
 #define OC_H2V(_offset, _val) vst1q_s16(hi + (_offset) * 17, _val)
 /*              L2 -> LL3, HL3 */
-#define IC_L2V IC_L0V
+#define IC_L2V(_x2nv, _x2n1v, _x2n2v, _offset) do { \
+    v1 = vld1q_s16(ic + 2 * (_offset)); \
+    v2 = vld1q_s16(ic + 2 * (_offset) + 8); \
+    _x2nv  = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v1, 16), 16)), \
+        vqmovn_s32(vshrq_n_s32(vshlq_n_s32((int32x4_t)v2, 16), 16))); \
+    _x2n1v = vcombine_s16( \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v1, 16)), \
+        vqmovn_s32(vshrq_n_s32((int32x4_t)v2, 16))); \
+    v1 = vextq_s16(x2nv, g_zero.v16x8, 1); \
+    _x2n2v = vsetq_lane_s16(ic[(_offset) * 2 + 16], v1, 7); \
+} while (0)
 #define OC_LL3V OC_LL1V
 #define OC_HL3V OC_HL1V
 /*              H2 -> LH3, HH3 */
-#define IC_H2V IC_L0V
+#define IC_H2V IC_L2V
 #define OC_LH3V OC_LL1V
 #define OC_HH3V OC_HL1V
 
@@ -205,6 +244,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
     int16x8_t hi_halfv;
     int16x8_t v1;
     int16x8_t v2;
+    int16x8_t v3;
     int16x8_t hn_savev;
     sint16 x2n;         /* n[2n]     */
     sint16 hn;          /* H[n]      */
@@ -227,7 +267,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LL1(y);
         hi = SETUP_OC_HL1(y);
         /* pre */
-        IC_L0V(x2nv, x2n1v, x2n2v, 0);
+        IC_L0V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HL1V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = vandq_s16(hnv, g_i16_0); /* mirror */
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
@@ -236,7 +276,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         /* loop */
         for (n = 8; n < 24; n += 8)
         {
-            IC_L0V(x2nv, x2n1v, x2n2v, n);
+            IC_L0V_LOOP(x2nv, x2n1v, x2n2v, n);
             OC_HL1V(n, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
             hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
             hn_savev = vextq_s16(hnv, g_zero.v16x8, 7);
@@ -265,7 +305,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LH1(y);
         hi = SETUP_OC_HH1(y);
         /* pre */
-        IC_H0V(x2nv, x2n1v, x2n2v, 0);
+        IC_H0V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HH1V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = vandq_s16(hnv, g_i16_0); /* mirror */
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
@@ -274,7 +314,7 @@ rfx_encode_dwt_shift_rem_horz_lv1(const sint16 *in_buffer, sint16 *out_buffer,
         /* loop */
         for (n = 8; n < 24; n += 8)
         {
-            IC_H0V(x2nv, x2n1v, x2n2v, n);
+            IC_H0V_LOOP(x2nv, x2n1v, x2n2v, n);
             OC_HH1V(n, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
             hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
             hn_savev = vextq_s16(hnv, g_zero.v16x8, 7);
@@ -409,6 +449,7 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
     int16x8_t hi_halfv;
     int16x8_t v1;
     int16x8_t v2;
+    int16x8_t v3;
     int16x8_t hn_savev;
     sint16 x2n;         /* n[2n]     */
     sint16 x2n1;        /* n[2n + 1] */
@@ -432,14 +473,14 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LL2(y);
         hi = SETUP_OC_HL2(y);
         /* pre */
-        IC_L1V(x2nv, x2n1v, x2n2v, 0);
+        IC_L1V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HL2V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = vandq_s16(hnv, g_i16_0); /* mirror */
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
         hn_savev = vextq_s16(hnv, g_zero.v16x8, 7);
         OC_LL2V(0, NOQ(LO_MATHV(hnv, hn1v, x2nv)));
         /* loop */
-        IC_L1V(x2nv, x2n1v, x2n2v, 8);
+        IC_L1V_POST(x2nv, x2n1v, x2n2v, 8);
         OC_HL2V(8, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
         hn = vgetq_lane_s16(hnv, 7);
@@ -467,14 +508,14 @@ rfx_encode_dwt_shift_rem_horz_lv2(const sint16 *in_buffer, sint16 *out_buffer,
         lo = SETUP_OC_LH2(y);
         hi = SETUP_OC_HH2(y);
         /* pre */
-        IC_H1V(x2nv, x2n1v, x2n2v, 0);
+        IC_H1V_PRE(x2nv, x2n1v, x2n2v, 0);
         OC_HH2V(0, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn_savev = vandq_s16(hnv, g_i16_0); /* mirror */
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
         hn_savev = vextq_s16(hnv, g_zero.v16x8, 7);
         OC_LH2V(0, LOQV(LO_MATHV(hnv, hn1v, x2nv)));
         /* loop */
-        IC_H1V(x2nv, x2n1v, x2n2v, 8);
+        IC_H1V_POST(x2nv, x2n1v, x2n2v, 8);
         OC_HH2V(8, HIQV(hnv = HI_MATHV(x2nv, x2n1v, x2n2v)));
         hn1v = vorrq_s16(vextq_s16(g_zero.v16x8, hnv, 7), hn_savev);
         hn = vgetq_lane_s16(hnv, 7);
