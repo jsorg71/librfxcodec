@@ -1,5 +1,5 @@
 /*
-Copyright 2014-2015 Jay Sorg
+Copyright 2014-2025 Jay Sorg
 
 Permission to use, copy, modify, distribute, and sell this software and its
 documentation for any purpose is hereby granted without fee, provided that
@@ -41,6 +41,19 @@ rfxcodec_encode_dwt_shift_amd64_sse41(const char *qtable,
                                       const unsigned char *data,
                                       short *dwt_buffer1,
                                       short *dwt_buffer);
+int
+rfxcodec_decode_shift_idwt_amd64_sse2(const uint8 *qtable,
+                                      sint16 *in_buffer,
+                                      sint16 *work_buffer,
+                                      uint8 *out_buffer);
+int
+rfxcodec_decode_yuva2argb_amd64_sse2(uint8 *y_buf, uint8 *u_buf,
+                                     uint8 *v_buf, uint8 *a_buf,
+                                     uint8 *rgb_data, int stride_bytes);
+int
+rfxcodec_decode_yuva2argb_amd64_sse41(uint8 *y_buf, uint8 *u_buf,
+                                      uint8 *v_buf, uint8 *a_buf,
+                                      uint8 *rgb_data, int stride_bytes);
 
 #ifdef __cplusplus
 }

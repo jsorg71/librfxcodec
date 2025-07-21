@@ -63,7 +63,7 @@
 /* 65536       0     92094
    65536  -22527    -46819
    65536  115992         0 */
-int
+static int
 rfxcodec_decode_yuva2argb(uint8 *y_buf, uint8 *u_buf,
                           uint8 *v_buf, uint8 *a_buf,
                           uint8* rgb_data, int stride_bytes)
@@ -122,7 +122,7 @@ rfx_decode_yuva2argb(struct rfxdecode *dec, int tile_x, int tile_y)
 }
 
 /******************************************************************************/
-int
+static int
 rfxcodec_decode_yuva2abgr(uint8 *y_buf, uint8 *u_buf,
                           uint8 *v_buf, uint8 *a_buf,
                           uint8* rgb_data, int stride_bytes)
@@ -180,7 +180,7 @@ rfx_decode_yuva2abgr(struct rfxdecode *dec, int tile_x, int tile_y)
 }
 
 /******************************************************************************/
-int
+static int
 rfxcodec_decode_yuva2rgb(uint8 *y_buf, uint8 *u_buf,
                          uint8 *v_buf, uint8 *a_buf,
                          uint8* rgb_data, int stride_bytes)
@@ -236,7 +236,7 @@ rfx_decode_yuva2rgb(struct rfxdecode *dec, int tile_x, int tile_y)
 }
 
 /******************************************************************************/
-int
+static int
 rfxcodec_decode_yuva2bgr(uint8 *y_buf, uint8 *u_buf,
                          uint8 *v_buf, uint8 *a_buf,
                          uint8* rgb_data, int stride_bytes)
