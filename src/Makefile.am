@@ -46,7 +46,7 @@ noinst_HEADERS = \
   rfxencode_dwt_shift_rem.h \
   rfxencode_dwt_shift_rem_common.h
 
-lib_LTLIBRARIES = librfxencode.la
+lib_LTLIBRARIES = librfxencode.la librfxdecode.la
 
 librfxencode_la_LDFLAGS = -all-static
 
@@ -58,4 +58,11 @@ librfxencode_la_SOURCES = $(noinst_HEADERS) rfxencode.c \
   rfxencode_rgb_to_yuv.c \
   rfxencode_dwt_rem.c \
   rfxencode_dwt_shift_rem.c \
+  $(EXTRA_SOURCES)
+
+librfxdecode_la_SOURCES = $(noinst_HEADERS) rfxdecode.c \
+  rfxdecode_decompose.c rfxdecode_tile.c rfxdecode_dwt.c \
+  rfxdecode_quantization.c rfxdecode_differential.c \
+  rfxdecode_rlgr1.c rfxdecode_rlgr3.c rfxdecode_alpha.c \
+  rfxdecode_rlgr1_diff.c rfxdecode_rlgr3_diff.c \
   $(EXTRA_SOURCES)

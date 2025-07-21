@@ -19,6 +19,29 @@
 #ifndef __RFXCODEC_COMMON_H
 #define __RFXCODEC_COMMON_H
 
+#define LIBRFXCODEC_VERSION_MAJOR 0
+#define LIBRFXCODEC_VERSION_MINOR 1
+#define LIBRFXCODEC_VERSION_MICRO 0
+
+struct rfx_rect
+{
+    int x;
+    int y;
+    int cx;
+    int cy;
+};
+
+struct rfx_tile
+{
+    int x; /* multiple of 64 */
+    int y; /* multiple of 64 */
+    int cx; /* must be 64 or less */
+    int cy; /* must be 64 or less */
+    int quant_y;
+    int quant_cb;
+    int quant_cr;
+};
+
 #define RFX_FORMAT_BGRA 0
 #define RFX_FORMAT_RGBA 1
 #define RFX_FORMAT_BGR  2

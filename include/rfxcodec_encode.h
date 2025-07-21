@@ -21,25 +21,8 @@
 
 #include <rfxcodec_common.h>
 
-struct rfx_rect
-{
-    int x;
-    int y;
-    int cx;
-    int cy;
-};
-
-struct rfx_tile
-{
-    int x; /* multiple of 64 */
-    int y; /* multiple of 64 */
-    int cx; /* must be 64 or less */
-    int cy; /* must be 64 or less */
-    int quant_y;
-    int quant_cb;
-    int quant_cr;
-};
-
+int
+rfxcodec_encode_get_version(int *major, int *minor, int *micro);
 void *
 rfxcodec_encode_create(int width, int height, int format, int flags);
 int

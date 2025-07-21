@@ -32,6 +32,13 @@ typedef signed short sint16;
 typedef unsigned short uint16;
 typedef signed int sint32;
 typedef unsigned int uint32;
+#ifdef _WIN64
+typedef signed __int64 sintptr;
+typedef unsigned __int64 uintptr;
+#else
+typedef signed long sintptr;
+typedef unsigned long uintptr;
+#endif
 
 struct _STREAM
 {
