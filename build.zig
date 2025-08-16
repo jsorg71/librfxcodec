@@ -18,11 +18,8 @@ pub fn build(b: *std.Build) void {
         .strip = do_strip,
     });
     librfxencode.linkLibC();
-    librfxencode.root_module.addCMacro("HAVE_CONFIG_H", "1");
-    librfxencode.root_module.addCMacro("CONFIG_AC_H", "1");
     librfxencode.addIncludePath(b.path("."));
     librfxencode.addIncludePath(b.path("src"));
-    librfxencode.addIncludePath(b.path("src/sse2"));
     librfxencode.addIncludePath(b.path("include"));
     librfxencode.addCSourceFiles(.{ .files = librfxencode_sources });
     // decoder
@@ -33,11 +30,8 @@ pub fn build(b: *std.Build) void {
         .strip = do_strip,
     });
     librfxdecode.linkLibC();
-    librfxdecode.root_module.addCMacro("HAVE_CONFIG_H", "1");
-    librfxdecode.root_module.addCMacro("CONFIG_AC_H", "1");
     librfxdecode.addIncludePath(b.path("."));
     librfxdecode.addIncludePath(b.path("src"));
-    librfxdecode.addIncludePath(b.path("src/sse2"));
     librfxdecode.addIncludePath(b.path("include"));
     librfxdecode.addCSourceFiles(.{ .files = librfxdecode_sources });
 
