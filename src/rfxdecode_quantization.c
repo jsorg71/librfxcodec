@@ -25,6 +25,7 @@ static void
 rfx_quantization_decode_block(sint16 * buffer, int buffer_size, sint32 factor)
 {
     sint16 * dst;
+    uint16 temp; // use unsigned for shift left
 
     factor += DWT_FACTOR;
     if (factor <= 0)
@@ -33,7 +34,9 @@ rfx_quantization_decode_block(sint16 * buffer, int buffer_size, sint32 factor)
     }
     for (dst = buffer; buffer_size > 0; dst++, buffer_size--)
     {
-        *dst <<= factor;
+        temp = *dst;
+        temp <<= factor;
+        *dst = temp;
     }
 }
 

@@ -53,25 +53,25 @@ rfx_dwt_2d_decode_block(sint16 * buffer, sint16 * idwt, int subband_width)
     for (y = 0; y < subband_width; y++)
     {
         /* Even coefficients */
-        l_dst[0] = ll[0] - ((hl[0] + hl[0] + 1) >> 1);
-        h_dst[0] = lh[0] - ((hh[0] + hh[0] + 1) >> 1);
+        l_dst[0] = ll[0] - ((hl[0] + hl[0] + 1) / 2);
+        h_dst[0] = lh[0] - ((hh[0] + hh[0] + 1) / 2);
         for (n = 1; n < subband_width; n++)
         {
             x = n << 1;
-            l_dst[x] = ll[n] - ((hl[n-1] + hl[n] + 1) >> 1);
-            h_dst[x] = lh[n] - ((hh[n-1] + hh[n] + 1) >> 1);
+            l_dst[x] = ll[n] - ((hl[n-1] + hl[n] + 1) / 2);
+            h_dst[x] = lh[n] - ((hh[n-1] + hh[n] + 1) / 2);
         }
 
          /* Odd coefficients */
         for (n = 0; n < subband_width-1; n++)
         {
             x = n << 1;
-            l_dst[x + 1] = (hl[n] << 1) + ((l_dst[x] + l_dst[x + 2]) >> 1);
-            h_dst[x + 1] = (hh[n] << 1) + ((h_dst[x] + h_dst[x + 2]) >> 1);
+            l_dst[x + 1] = (hl[n] * 2) + ((l_dst[x] + l_dst[x + 2]) / 2);
+            h_dst[x + 1] = (hh[n] * 2) + ((h_dst[x] + h_dst[x + 2]) / 2);
         }
         x = n << 1;
-        l_dst[x + 1] = (hl[n] << 1) + (l_dst[x]);
-        h_dst[x + 1] = (hh[n] << 1) + (h_dst[x]);
+        l_dst[x + 1] = (hl[n] * 2) + (l_dst[x]);
+        h_dst[x + 1] = (hh[n] * 2) + (h_dst[x]);
 
         ll += subband_width;
         hl += subband_width;
@@ -92,7 +92,7 @@ rfx_dwt_2d_decode_block(sint16 * buffer, sint16 * idwt, int subband_width)
             dst = buffer + y * total_width + x;
             l = idwt + n * total_width + x;
             h = l + subband_width * total_width;
-            dst[0] = *l - (((n > 0 ? *(h - total_width) : *h) + (*h) + 1) >> 1);
+            dst[0] = *l - (((n > 0 ? *(h - total_width) : *h) + (*h) + 1) / 2);
         }
 
         /* Odd coefficients */
@@ -102,7 +102,7 @@ rfx_dwt_2d_decode_block(sint16 * buffer, sint16 * idwt, int subband_width)
             dst = buffer + y * total_width + x;
             l = idwt + n * total_width + x;
             h = l + subband_width * total_width;
-            dst[total_width] = (*h << 1) + ((dst[0] + dst[n < subband_width - 1 ? 2 * total_width : 0]) >> 1);
+            dst[total_width] = (*h * 2) + ((dst[0] + dst[n < subband_width - 1 ? 2 * total_width : 0]) / 2);
         }
     }
     return 0;

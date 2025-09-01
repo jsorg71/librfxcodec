@@ -48,9 +48,11 @@ struct _STREAM
 };
 typedef struct _STREAM STREAM;
 
-#if defined(__x86__) || defined(__x86_64__) || \
-    defined(__AMD64__) || defined(_M_IX86) || defined (_M_AMD64) || \
-    defined(__i386__)
+#if (!defined(_DEBUG)) && \
+        (defined(__x86__) || defined(__x86_64__) || defined(__AMD64__) || \
+        defined(_M_IX86) || defined (_M_AMD64) || defined(__i386__))
+/* these can use undefined behaivor according to c standard but used
+   for perforamce */
 #define stream_read_uint8(_s, _v) do { _v = ((uint8 *) ((_s)->p))[0]; (_s)->p += 1; } while (0)
 #define stream_read_uint16(_s, _v) do { _v = ((uint16 *) ((_s)->p))[0]; (_s)->p += 2; } while (0)
 #define stream_read_uint32(_s, _v) do { _v = ((uint32 *) ((_s)->p))[0]; (_s)->p += 4; } while (0)
@@ -63,15 +65,17 @@ typedef struct _STREAM STREAM;
     (_s)->p += 1; \
 } while (0)
 #define stream_read_uint16(_s, _v) do { \
-    _v = (((uint8 *) ((_s)->p))[0]) | \
-        ((((uint8 *) ((_s)->p))[1]) << 8); \
+    uint16 lv = (_s)->p[1]; \
+    lv = (lv << 8) | (_s)->p[0]; \
+    _v = lv; \
     (_s)->p += 2; \
 } while (0)
 #define stream_read_uint32(_s, _v) do { \
-    _v = (((uint8 *) ((_s)->p))[0]) | \
-        ((((uint8 *) ((_s)->p))[1]) << 8) | \
-        ((((uint8 *) ((_s)->p))[2]) << 16) | \
-        ((((uint8 *) ((_s)->p))[3]) << 24); \
+    uint32 lv = (_s)->p[3]; \
+    lv = (lv << 8) | (_s)->p[2]; \
+    lv = (lv << 8) | (_s)->p[1]; \
+    lv = (lv << 8) | (_s)->p[0]; \
+    _v = lv; \
     (_s)->p += 4; \
 } while (0)
 #define stream_write_uint8(_s, _v) do { \
