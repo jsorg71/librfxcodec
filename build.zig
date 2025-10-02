@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 
 pub fn build(b: *std.Build) void {
     // build options
@@ -11,24 +12,16 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
     // encoder
-    const librfxencode = b.addStaticLibrary(.{
-        .name = "rfxencode",
-        .target = target,
-        .optimize = optimize,
-        .strip = do_strip,
-    });
+    const librfxencode = myAddStaticLibrary(b, "rfxencode", target,
+            optimize, do_strip);
     librfxencode.linkLibC();
     librfxencode.addIncludePath(b.path("."));
     librfxencode.addIncludePath(b.path("src"));
     librfxencode.addIncludePath(b.path("include"));
     librfxencode.addCSourceFiles(.{ .files = librfxencode_sources });
     // decoder
-    const librfxdecode = b.addStaticLibrary(.{
-        .name = "rfxdecode",
-        .target = target,
-        .optimize = optimize,
-        .strip = do_strip,
-    });
+    const librfxdecode = myAddStaticLibrary(b, "rfxdecode", target,
+            optimize, do_strip);
     librfxdecode.linkLibC();
     librfxdecode.addIncludePath(b.path("."));
     librfxdecode.addIncludePath(b.path("src"));
@@ -37,6 +30,32 @@ pub fn build(b: *std.Build) void {
 
     b.installArtifact(librfxencode);
     b.installArtifact(librfxdecode);
+}
+
+//*****************************************************************************
+fn myAddStaticLibrary(b: *std.Build, name: []const u8,
+        target: std.Build.ResolvedTarget,
+        optimize: std.builtin.OptimizeMode,
+        do_strip: bool) *std.Build.Step.Compile
+{
+    if ((builtin.zig_version.major == 0) and (builtin.zig_version.minor < 15))
+    {
+        return b.addStaticLibrary(.{
+            .name = name,
+            .target = target,
+            .optimize = optimize,
+            .strip = do_strip,
+        });
+    }
+    return b.addLibrary(.{
+        .name = name,
+        .root_module = b.addModule(name, .{
+            .target = target,
+            .optimize = optimize,
+            .strip = do_strip,
+        }),
+        .linkage = .static,
+    });
 }
 
 const librfxencode_sources = &.{
