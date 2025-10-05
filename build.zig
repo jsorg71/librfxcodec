@@ -11,6 +11,7 @@ pub fn build(b: *std.Build) void {
 
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
+    const libflags = if (optimize == .Debug) "-DDEBUG=1" else "-DNDEBUG=1";
     // encoder
     const librfxencode = myAddStaticLibrary(b, "rfxencode", target,
             optimize, do_strip);
@@ -18,7 +19,8 @@ pub fn build(b: *std.Build) void {
     librfxencode.addIncludePath(b.path("."));
     librfxencode.addIncludePath(b.path("src"));
     librfxencode.addIncludePath(b.path("include"));
-    librfxencode.addCSourceFiles(.{ .files = librfxencode_sources });
+    librfxencode.addCSourceFiles(.{ .files = librfxencode_sources,
+            .flags =  &.{libflags} });
     // decoder
     const librfxdecode = myAddStaticLibrary(b, "rfxdecode", target,
             optimize, do_strip);
@@ -26,7 +28,8 @@ pub fn build(b: *std.Build) void {
     librfxdecode.addIncludePath(b.path("."));
     librfxdecode.addIncludePath(b.path("src"));
     librfxdecode.addIncludePath(b.path("include"));
-    librfxdecode.addCSourceFiles(.{ .files = librfxdecode_sources });
+    librfxdecode.addCSourceFiles(.{ .files = librfxdecode_sources,
+            .flags =  &.{libflags} });
 
     b.installArtifact(librfxencode);
     b.installArtifact(librfxdecode);

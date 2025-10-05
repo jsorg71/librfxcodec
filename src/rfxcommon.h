@@ -48,7 +48,7 @@ struct _STREAM
 };
 typedef struct _STREAM STREAM;
 
-#if (!defined(_DEBUG)) && \
+#if (!defined(DEBUG)) && \
         (defined(__x86__) || defined(__x86_64__) || defined(__AMD64__) || \
         defined(_M_IX86) || defined (_M_AMD64) || defined(__i386__))
 /* these can use undefined behaivor according to c standard but used
