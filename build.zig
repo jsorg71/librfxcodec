@@ -15,24 +15,61 @@ pub fn build(b: *std.Build) void {
     // encoder
     const librfxencode = myAddStaticLibrary(b, "rfxencode", target,
             optimize, do_strip);
-    librfxencode.linkLibC();
-    librfxencode.addIncludePath(b.path("."));
-    librfxencode.addIncludePath(b.path("src"));
-    librfxencode.addIncludePath(b.path("include"));
-    librfxencode.addCSourceFiles(.{ .files = librfxencode_sources,
-            .flags =  &.{libflags} });
+    myLinkLibC(librfxencode);
+    myAddIncludePath(librfxencode, b.path("."));
+    myAddIncludePath(librfxencode, b.path("src"));
+    myAddIncludePath(librfxencode, b.path("include"));
+    myAddCSourceFiles(librfxencode, .{ .files = librfxencode_sources, .flags =  &.{libflags} });
     // decoder
     const librfxdecode = myAddStaticLibrary(b, "rfxdecode", target,
             optimize, do_strip);
-    librfxdecode.linkLibC();
-    librfxdecode.addIncludePath(b.path("."));
-    librfxdecode.addIncludePath(b.path("src"));
-    librfxdecode.addIncludePath(b.path("include"));
-    librfxdecode.addCSourceFiles(.{ .files = librfxdecode_sources,
-            .flags =  &.{libflags} });
+    myLinkLibC(librfxdecode);
+    myAddIncludePath(librfxdecode, b.path("."));
+    myAddIncludePath(librfxdecode, b.path("src"));
+    myAddIncludePath(librfxdecode, b.path("include"));
+    myAddCSourceFiles(librfxdecode, .{ .files = librfxdecode_sources, .flags =  &.{libflags} });
 
     b.installArtifact(librfxencode);
     b.installArtifact(librfxdecode);
+}
+
+//*****************************************************************************
+fn myLinkLibC(compile: *std.Build.Step.Compile) void
+{
+    if ((builtin.zig_version.major == 0) and (builtin.zig_version.minor < 16))
+    {
+        compile.linkLibC();
+    }
+    else
+    {
+        compile.root_module.link_libc = true;
+    }
+}
+
+//*****************************************************************************
+fn myAddIncludePath(compile: *std.Build.Step.Compile, lazy_path: std.Build.LazyPath) void
+{
+    if ((builtin.zig_version.major == 0) and (builtin.zig_version.minor < 16))
+    {
+        compile.addIncludePath(lazy_path);
+    }
+    else
+    {
+        compile.root_module.addIncludePath(lazy_path);
+    }
+}
+
+//*****************************************************************************
+fn myAddCSourceFiles(compile: *std.Build.Step.Compile, options: std.Build.Module.AddCSourceFilesOptions) void
+{
+    if ((builtin.zig_version.major == 0) and (builtin.zig_version.minor < 16))
+    {
+        compile.addCSourceFiles(options);
+    }
+    else
+    {
+        compile.root_module.addCSourceFiles(options);
+    }
 }
 
 //*****************************************************************************
